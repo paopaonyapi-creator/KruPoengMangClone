@@ -1,0 +1,13 @@
+{
+  "name": "Kru Pug Hub",
+  "short_name": "KruPug",
+  "description": "ศูนย์รวมสื่อคุณภาพเพื่อครูคณิตศาสตร์",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f23",
+  "theme_color": "#a855f7",
+  "icons": [
+    { "src": "https://api.iconify.design/fluent-emoji:teacher-light-skin-tone.svg", "sizes": "192x192", "type": "image/svg+xml" },
+    { "src": "https://api.iconify.design/fluent-emoji:teacher-light-skin-tone.svg", "sizes": "512x512", "type": "image/svg+xml" }
+  ]
+}

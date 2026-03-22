@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เช็คชื่อ - Kru Pug</title>
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .attendance-container { max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        .student-list { list-style: none; margin-top: 20px; }
+        .student-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px;
+            margin-bottom: 8px; border-radius: 12px; background: var(--glass-bg); border: 1px solid var(--glass-border); }
+        .student-item.checked { border-color: #10b981; background: rgba(16,185,129,0.1); }
+        .btn-checkin { background: #10b981; color: #fff; border: none; padding: 8px 20px; border-radius: 8px;
+            font-family: inherit; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-checkin:hover { background: #059669; transform: scale(1.05); }
+        .btn-checkin:disabled { background: #374151; cursor: not-allowed; transform: none; }
+        .class-title { text-align: center; margin-bottom: 24px; }
+        .back-link { color: var(--text-muted); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+        .back-link:hover { color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="dynamic-bg"><div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div></div>
+
+    <div class="attendance-container">
+        <a href="index.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</a>
+        
+        <div class="glass-card class-title" id="class-info">
+            <h1><i class="fa-solid fa-clipboard-check" style="color:#10b981;"></i> เช็คชื่อเข้าเรียน</h1>
+            <p id="class-name" style="color:var(--text-muted); margin-top:8px;">กำลังโหลด...</p>
+        </div>
+
+        <ul class="student-list" id="student-list">
+            <li class="student-item" style="justify-content:center;color:var(--text-muted);">กำลังโหลดรายชื่อ...</li>
+        </ul>
+    </div>
+
+    <script>
+    const params = new URLSearchParams(location.search);
+    const classId = params.get('class');
+    
+    if (!classId) {
+        document.getElementById('class-name').textContent = 'ไม่พบห้องเรียน — กรุณาสแกน QR Code';
+        document.getElementById('student-list').innerHTML = '';
+    } else {
+        loadData();
+    }
+
+    async function loadData() {
+        try {
+            const [classRes, studentsRes, attRes] = await Promise.all([
+                fetch('/api/classrooms'),
+                fetch(`/api/students?class_id=${classId}`),
+                fetch(`/api/attendance?class_id=${classId}&date=${new Date().toISOString().split('T')[0]}`)
+            ]);
+            const classes = await classRes.json();
+            const students = await studentsRes.json();
+            const attendance = await attRes.json();
+            
+            const cls = classes.find(c => c.id == classId);
+            document.getElementById('class-name').textContent = cls ? `${cls.name} (${cls.grade})` : 'ห้องเรียน #' + classId;
+            
+            const checkedIds = new Set(attendance.map(a => a.student_id));
+            
+            if (students.length === 0) {
+                document.getElementById('student-list').innerHTML = '<li class="student-item" style="justify-content:center;color:var(--text-muted);">ยังไม่มีนักเรียนในห้องนี้</li>';
+                return;
+            }
+            
+            document.getElementById('student-list').innerHTML = students.map(s => {
+                const isChecked = checkedIds.has(s.id);
+                return `<li class="student-item ${isChecked ? 'checked' : ''}" id="s-${s.id}">
+                    <div>
+                        <strong>${s.name}</strong>
+                        <span style="color:var(--text-muted);font-size:0.85rem;margin-left:8px;">${s.student_id || ''}</span>
+                    </div>
+                    ${isChecked 
+                        ? '<span style="color:#10b981;font-weight:600;"><i class="fa-solid fa-check-circle"></i> เช็คชื่อแล้ว</span>'
+                        : `<button class="btn-checkin" onclick="checkin(${s.id})"><i class="fa-solid fa-check"></i> เช็คชื่อ</button>`
+                    }
+                </li>`;
+            }).join('');
+        } catch (err) { console.error(err); }
+    }
+
+    async function checkin(studentId) {
+        try {
+            const res = await fetch('/api/attendance/checkin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ student_id: studentId, classroom_id: parseInt(classId) })
+            });
+            const data = await res.json();
+            if (data.success) {
+                loadData();
+            } else {
+                alert(data.error || 'เกิดข้อผิดพลาด');
+            }
+        } catch (err) { alert('เกิดข้อผิดพลาด'); }
+    }
+    </script>
+</body>
+</html>

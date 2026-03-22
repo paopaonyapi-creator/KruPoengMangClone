@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แบบทดสอบ - Kru Pug</title>
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .quiz-container { max-width: 700px; margin: 40px auto; padding: 0 20px; }
+        .quiz-header { text-align: center; margin-bottom: 24px; }
+        .timer { font-size: 1.5rem; color: #f59e0b; font-weight: 700; }
+        .timer.danger { color: #ef4444; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        .question-card { margin-bottom: 20px; padding: 24px; }
+        .question-num { color: var(--primary); font-weight: 700; font-size: 0.9rem; margin-bottom: 8px; }
+        .question-text { font-size: 1.1rem; margin-bottom: 16px; line-height: 1.6; }
+        .choices { display: flex; flex-direction: column; gap: 10px; }
+        .choice-btn { text-align: left; padding: 14px 18px; background: rgba(255,255,255,0.05);
+            border: 2px solid var(--glass-border); color: #fff; font-family: inherit; font-size: 1rem;
+            border-radius: 12px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 12px; }
+        .choice-btn:hover { border-color: var(--primary); background: rgba(99,102,241,0.1); }
+        .choice-btn.selected { border-color: var(--primary); background: rgba(99,102,241,0.2); }
+        .choice-label { width: 32px; height: 32px; border-radius: 50%; background: var(--glass-bg);
+            display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+        .choice-btn.selected .choice-label { background: var(--primary); }
+        .btn-submit-quiz { width: 100%; padding: 16px; font-size: 1.1rem; margin-top: 16px; }
+        .result-card { text-align: center; padding: 40px; }
+        .score-circle { width: 150px; height: 150px; border-radius: 50%; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; margin: 24px auto; font-size: 2.5rem; font-weight: 700; }
+        .score-good { border: 4px solid #10b981; color: #10b981; }
+        .score-mid { border: 4px solid #f59e0b; color: #f59e0b; }
+        .score-bad { border: 4px solid #ef4444; color: #ef4444; }
+        .quiz-list-item { padding: 20px; margin-bottom: 12px; cursor: pointer; transition: all 0.3s; }
+        .quiz-list-item:hover { transform: translateY(-3px); border-color: var(--primary); }
+        .name-input { margin: 20px 0; }
+        .back-link { color: var(--text-muted); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+        .back-link:hover { color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="dynamic-bg"><div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div></div>
+
+    <div class="quiz-container">
+        <a href="index.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</a>
+        <div id="quiz-content">
+            <div class="quiz-header glass-card">
+                <h1><i class="fa-solid fa-pen-ruler" style="color:#f59e0b;"></i> แบบทดสอบออนไลน์</h1>
+                <p style="color:var(--text-muted);margin-top:8px;">เลือกแบบทดสอบที่ต้องการทำ</p>
+            </div>
+            <div id="quiz-list"></div>
+        </div>
+    </div>
+
+    <script>
+    let timerInterval;
+    let answers = {};
+
+    // Load quiz list
+    loadQuizList();
+
+    async function loadQuizList() {
+        try {
+            const res = await fetch('/api/quizzes');
+            const quizzes = await res.json();
+            const list = document.getElementById('quiz-list');
+            if (quizzes.length === 0) {
+                list.innerHTML = '<div class="glass-card" style="text-align:center;padding:40px;color:var(--text-muted);"><i class="fa-solid fa-clipboard" style="font-size:3rem;margin-bottom:16px;display:block;"></i>ยังไม่มีแบบทดสอบ</div>';
+                return;
+            }
+            list.innerHTML = quizzes.filter(q => q.is_active).map(q => `
+                <div class="glass-card quiz-list-item" onclick="startQuiz(${q.id})">
+                    <h3><i class="fa-solid fa-file-lines" style="color:#f59e0b;margin-right:8px;"></i>${q.title}</h3>
+                    <p style="color:var(--text-muted);margin-top:8px;">${q.description || 'ไม่มีคำอธิบาย'}</p>
+                    <div style="margin-top:12px;display:flex;gap:16px;color:var(--text-muted);font-size:0.85rem;">
+                        <span><i class="fa-solid fa-clock"></i> ${q.time_limit} นาที</span>
+                    </div>
+                </div>
+            `).join('');
+        } catch (err) { console.error(err); }
+    }
+
+    async function startQuiz(id) {
+        const name = prompt('กรุณาใส่ชื่อ-สกุลก่อนทำแบบทดสอบ:');
+        if (!name) return;
+        
+        try {
+            const res = await fetch(`/api/quizzes/${id}`);
+            const quiz = await res.json();
+            answers = {};
+            
+            let timeLeft = quiz.time_limit * 60;
+            
+            document.getElementById('quiz-content').innerHTML = `
+                <div class="glass-card quiz-header">
+                    <h2>${quiz.title}</h2>
+                    <p style="color:var(--text-muted);">${quiz.description || ''}</p>
+                    <div class="timer" id="timer"><i class="fa-solid fa-clock"></i> ${formatTime(timeLeft)}</div>
+                </div>
+                <div id="questions">
+                    ${quiz.questions.map((q, i) => `
+                        <div class="glass-card question-card">
+                            <div class="question-num">ข้อที่ ${i+1} / ${quiz.questions.length}</div>
+                            <div class="question-text">${q.question}</div>
+                            <div class="choices">
+                                ${['a','b','c','d'].map(c => `
+                                    <button class="choice-btn" id="q${q.id}-${c}" onclick="selectAnswer(${q.id},'${c}')">
+                                        <span class="choice-label">${c.toUpperCase()}</span>
+                                        <span>${q['choice_'+c]}</span>
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                <button class="btn-glow btn-submit-quiz" onclick="submitQuiz(${id}, '${name.replace(/'/g,"\\'")}')">
+                    <i class="fa-solid fa-paper-plane"></i> ส่งคำตอบ
+                </button>
+            `;
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                const el = document.getElementById('timer');
+                if (el) {
+                    el.innerHTML = `<i class="fa-solid fa-clock"></i> ${formatTime(timeLeft)}`;
+                    if (timeLeft <= 60) el.classList.add('danger');
+                }
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    submitQuiz(id, name);
+                }
+            }, 1000);
+        } catch (err) { console.error(err); }
+    }
+
+    function selectAnswer(qId, choice) {
+        // Remove previous selection
+        ['a','b','c','d'].forEach(c => {
+            const btn = document.getElementById(`q${qId}-${c}`);
+            if (btn) btn.classList.remove('selected');
+        });
+        // Set new selection
+        const btn = document.getElementById(`q${qId}-${choice}`);
+        if (btn) btn.classList.add('selected');
+        answers[qId] = choice;
+    }
+
+    async function submitQuiz(quizId, studentName) {
+        clearInterval(timerInterval);
+        try {
+            const res = await fetch(`/api/quizzes/${quizId}/submit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ student_name: studentName, answers })
+            });
+            const result = await res.json();
+            
+            const scoreClass = result.percentage >= 80 ? 'score-good' : result.percentage >= 50 ? 'score-mid' : 'score-bad';
+            const emoji = result.percentage >= 80 ? '🎉' : result.percentage >= 50 ? '👍' : '💪';
+            
+            document.getElementById('quiz-content').innerHTML = `
+                <div class="glass-card result-card">
+                    <h2>${emoji} ผลการทดสอบ</h2>
+                    <div class="score-circle ${scoreClass}">
+                        ${result.percentage}%
+                        <span style="font-size:0.8rem;font-weight:400;">${result.score}/${result.total}</span>
+                    </div>
+                    <p style="font-size:1.2rem;margin:16px 0;">${studentName}</p>
+                    <p style="color:var(--text-muted);">
+                        ${result.percentage >= 80 ? 'ยอดเยี่ยม! ทำได้ดีมาก' : result.percentage >= 50 ? 'ดี! พยายามต่อไป' : 'ลองทบทวนบทเรียนอีกครั้งนะ'}
+                    </p>
+                    <button class="btn-glow" onclick="location.reload()" style="margin-top:24px;">
+                        <i class="fa-solid fa-rotate-right"></i> ทำแบบทดสอบอื่น
+                    </button>
+                </div>
+            `;
+        } catch (err) { alert('เกิดข้อผิดพลาด'); }
+    }
+
+    function formatTime(s) {
+        const m = Math.floor(s/60);
+        const sec = s%60;
+        return `${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
+    }
+    </script>
+</body>
+</html>

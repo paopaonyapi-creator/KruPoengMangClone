@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kru Pug - พอร์ทัลนักเรียน</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="index.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        .stu-container { max-width: 800px; margin: 20px auto; padding: 0 16px; }
+        .login-box { max-width: 400px; margin: 80px auto; text-align: center; }
+        .login-box h1 { font-size: 2rem; margin-bottom: 8px; }
+        .login-box p { color: var(--text-muted); margin-bottom: 24px; }
+        .stu-nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; justify-content: center; }
+        .stu-nav button { background: var(--glass-bg); border: 1px solid var(--glass-border); color: #fff; padding: 10px 16px; border-radius: 12px; cursor: pointer; font-size: 0.9rem; transition: all 0.3s; }
+        .stu-nav button:hover, .stu-nav button.active { background: var(--primary); border-color: var(--primary); }
+        .stu-panel { display: none; }
+        .stu-panel.active { display: block; }
+        .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: 16px; text-align: center; }
+        .stat-card .val { font-size: 1.8rem; font-weight: 800; }
+        .stat-card .lbl { font-size: 0.8rem; color: var(--text-muted); }
+        .exp-bar { background: rgba(255,255,255,0.1); border-radius: 12px; height: 20px; overflow: hidden; margin: 8px 0; }
+        .exp-fill { background: linear-gradient(90deg, #a855f7, #ec4899); height: 100%; border-radius: 12px; transition: width 0.5s; }
+        .badge-list { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+        .badge { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 8px; padding: 6px 12px; font-size: 0.85rem; }
+        .chat-box { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; overflow: hidden; }
+        .chat-messages { height: 350px; overflow-y: auto; padding: 16px; }
+        .chat-msg { margin-bottom: 12px; }
+        .chat-msg .name { font-weight: 600; font-size: 0.8rem; }
+        .chat-msg .name.teacher { color: #f59e0b; }
+        .chat-msg .name.student { color: #60a5fa; }
+        .chat-msg .text { background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 10px; margin-top: 4px; font-size: 0.9rem; }
+        .chat-input { display: flex; border-top: 1px solid var(--glass-border); }
+        .chat-input input { flex: 1; background: transparent; border: none; color: #fff; padding: 14px 16px; font-size: 0.9rem; outline: none; }
+        .chat-input button { background: var(--primary); border: none; color: #fff; padding: 14px 20px; cursor: pointer; }
+        .history-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .lb-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; margin-bottom: 8px; }
+        .lb-rank { font-size: 1.5rem; font-weight: 800; min-width: 40px; text-align: center; }
+        .lb-row:nth-child(1) .lb-rank { color: #fbbf24; }
+        .lb-row:nth-child(2) .lb-rank { color: #94a3b8; }
+        .lb-row:nth-child(3) .lb-rank { color: #cd7f32; }
+    </style>
+</head>
+<body>
+    <div class="stu-container">
+        <!-- Login Screen -->
+        <div id="login-screen">
+            <div class="login-box">
+                <div style="font-size:4rem;margin-bottom:16px;">🎓</div>
+                <h1>พอร์ทัลนักเรียน</h1>
+                <p>ลงชื่อเข้าใช้ด้วยรหัสนักเรียน</p>
+                <form onsubmit="studentLogin(event)">
+                    <div class="form-group"><input class="glass-input" id="login-id" placeholder="รหัสนักเรียน" required></div>
+                    <div class="form-group"><input type="password" class="glass-input" id="login-pass" placeholder="รหัสผ่าน (ค่าเริ่มต้น: 1234)" value="1234"></div>
+                    <p id="login-error" style="color:#ef4444;display:none;margin-bottom:12px;"></p>
+                    <button type="submit" class="btn-glow btn-full"><i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ</button>
+                </form>
+                <p style="margin-top:16px;"><a href="index.html" style="color:var(--text-muted);">&larr; กลับหน้าหลัก</a></p>
+            </div>
+        </div>
+
+        <!-- Main Portal (hidden until login) -->
+        <div id="portal-screen" style="display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <div>
+                    <h2 id="welcome-name" style="margin:0;"></h2>
+                    <p id="welcome-class" style="color:var(--text-muted);margin:0;font-size:0.9rem;"></p>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <span id="level-badge" class="badge" style="font-size:1rem;background:var(--primary);color:#fff;"></span>
+                    <button class="btn-outline" onclick="studentLogout()"><i class="fa-solid fa-right-from-bracket"></i></button>
+                </div>
+            </div>
+
+            <!-- EXP Bar -->
+            <div class="glass-card" style="padding:12px 16px;margin-bottom:16px;">
+                <div style="display:flex;justify-content:space-between;font-size:0.85rem;">
+                    <span id="exp-label">EXP: 0</span>
+                    <span id="next-level">Level 1</span>
+                </div>
+                <div class="exp-bar"><div class="exp-fill" id="exp-fill" style="width:0%"></div></div>
+                <div class="badge-list" id="badge-list"></div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="stu-nav">
+                <button class="active" onclick="switchStudentTab('dashboard',this)">🏠 หน้าหลัก</button>
+                <button onclick="switchStudentTab('quiz',this)">📝 แบบทดสอบ</button>
+                <button onclick="switchStudentTab('chat',this)">💬 ห้องแชท</button>
+                <button onclick="switchStudentTab('leaderboard',this)">🏆 อันดับ</button>
+                <button onclick="switchStudentTab('history',this)">📊 ประวัติ</button>
+                <button onclick="switchStudentTab('settings',this)">⚙️ ตั้งค่า</button>
+            </div>
+
+            <!-- Dashboard Panel -->
+            <div id="stu-dashboard" class="stu-panel active">
+                <div class="stat-cards">
+                    <div class="stat-card"><div class="val" id="s-attendance" style="color:#10b981;">0</div><div class="lbl">เช็คชื่อ</div></div>
+                    <div class="stat-card"><div class="val" id="s-quizzes" style="color:#3b82f6;">0</div><div class="lbl">ทำข้อสอบ</div></div>
+                    <div class="stat-card"><div class="val" id="s-avg" style="color:#f59e0b;">0%</div><div class="lbl">คะแนนเฉลี่ย</div></div>
+                    <div class="stat-card"><div class="val" id="s-exp" style="color:#a855f7;">0</div><div class="lbl">EXP</div></div>
+                </div>
+                <h3 style="margin-bottom:12px;">🔔 แจ้งเตือนล่าสุด</h3>
+                <div id="s-notifications" style="color:var(--text-muted);">กำลังโหลด...</div>
+            </div>
+
+            <!-- Quiz Panel -->
+            <div id="stu-quiz" class="stu-panel">
+                <h3 style="margin-bottom:12px;">📝 แบบทดสอบที่เปิดอยู่</h3>
+                <div id="quiz-list-student">กำลังโหลด...</div>
+            </div>
+
+            <!-- Chat Panel -->
+            <div id="stu-chat" class="stu-panel">
+                <h3 style="margin-bottom:12px;">💬 ห้องแชทกลาง</h3>
+                <div class="chat-box">
+                    <div class="chat-messages" id="chat-messages"></div>
+                    <div class="chat-input">
+                        <input id="chat-input" placeholder="พิมพ์ข้อความ..." onkeydown="if(event.key==='Enter')sendChat()">
+                        <button onclick="sendChat()"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaderboard Panel -->
+            <div id="stu-leaderboard" class="stu-panel">
+                <h3 style="margin-bottom:12px;">🏆 กระดานคะแนน</h3>
+                <div id="leaderboard-list">กำลังโหลด...</div>
+            </div>
+
+            <!-- History Panel -->
+            <div id="stu-history" class="stu-panel">
+                <h3 style="margin-bottom:12px;">📊 ประวัติแบบทดสอบ</h3>
+                <div id="history-list">กำลังโหลด...</div>
+                <h3 style="margin:20px 0 12px;">🗓️ ประวัติเช็คชื่อ</h3>
+                <div id="attendance-list">กำลังโหลด...</div>
+            </div>
+
+            <!-- Settings Panel -->
+            <div id="stu-settings" class="stu-panel">
+                <div class="glass-card" style="max-width:400px;">
+                    <h3 style="margin-bottom:16px;"><i class="fa-solid fa-gear"></i> เปลี่ยนรหัสผ่าน</h3>
+                    <form onsubmit="changeStudentPassword(event)">
+                        <div class="form-group"><label>รหัสเดิม</label><input type="password" class="glass-input" id="s-old-pass" required></div>
+                        <div class="form-group"><label>รหัสใหม่</label><input type="password" class="glass-input" id="s-new-pass" required minlength="4"></div>
+                        <p id="s-pass-error" style="color:#ef4444;display:none;margin-bottom:12px;"></p>
+                        <button type="submit" class="btn-glow btn-full"><i class="fa-solid fa-key"></i> เปลี่ยนรหัสผ่าน</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    let STU_TOKEN = localStorage.getItem('studentToken');
+    let STUDENT = JSON.parse(localStorage.getItem('studentData') || 'null');
+    let chatInterval;
+
+    if (STU_TOKEN && STUDENT) { showPortal(); }
+
+    async function studentLogin(e) {
+        e.preventDefault();
+        const errEl = document.getElementById('login-error');
+        errEl.style.display = 'none';
+        try {
+            const res = await fetch('/api/student/login', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ student_id: document.getElementById('login-id').value, password: document.getElementById('login-pass').value })
+            });
+            const data = await res.json();
+            if (data.success) {
+                STU_TOKEN = data.token; STUDENT = data.student;
+                localStorage.setItem('studentToken', STU_TOKEN);
+                localStorage.setItem('studentData', JSON.stringify(STUDENT));
+                showPortal();
+            } else { errEl.textContent = data.error; errEl.style.display = 'block'; }
+        } catch(err) { errEl.textContent = 'เชื่อมต่อไม่ได้'; errEl.style.display = 'block'; }
+    }
+
+    function studentLogout() { localStorage.removeItem('studentToken'); localStorage.removeItem('studentData'); location.reload(); }
+
+    function showPortal() {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('portal-screen').style.display = 'block';
+        document.getElementById('welcome-name').textContent = `สวัสดี ${STUDENT.name}! 👋`;
+        document.getElementById('welcome-class').textContent = STUDENT.classroom || '';
+        loadStudentDashboard();
+    }
+
+    function switchStudentTab(tab, btn) {
+        document.querySelectorAll('.stu-nav button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.stu-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('stu-' + tab).classList.add('active');
+        if (tab === 'chat') { loadChat(); chatInterval = setInterval(loadChat, 5000); }
+        else { clearInterval(chatInterval); }
+        if (tab === 'leaderboard') loadLeaderboard();
+        if (tab === 'quiz') loadStudentQuizzes();
+        if (tab === 'history') loadStudentDashboard();
+    }
+
+    async function loadStudentDashboard() {
+        try {
+            const res = await fetch('/api/student/profile', { headers: { 'x-student-token': STU_TOKEN } });
+            if (res.status === 401) { studentLogout(); return; }
+            const data = await res.json();
+
+            // Stats
+            document.getElementById('s-attendance').textContent = data.attendance?.length || 0;
+            document.getElementById('s-quizzes').textContent = data.quizResults?.length || 0;
+            const avgScore = data.quizResults?.length > 0 ? Math.round(data.quizResults.reduce((s,r) => s + (r.score/r.total*100), 0) / data.quizResults.length) : 0;
+            document.getElementById('s-avg').textContent = avgScore + '%';
+
+            // Gamification
+            const stats = data.stats || { exp: 0, level: 1, badges: '[]' };
+            document.getElementById('s-exp').textContent = stats.exp;
+            document.getElementById('level-badge').textContent = `⭐ Lv.${stats.level}`;
+            document.getElementById('exp-label').textContent = `EXP: ${stats.exp}`;
+            document.getElementById('next-level').textContent = `Level ${stats.level} → ${stats.level + 1}`;
+            const expInLevel = stats.exp % 100;
+            document.getElementById('exp-fill').style.width = expInLevel + '%';
+
+            const badges = JSON.parse(stats.badges || '[]');
+            document.getElementById('badge-list').innerHTML = badges.length > 0 ?
+                badges.map(b => `<span class="badge">${b}</span>`).join('') :
+                '<span style="color:var(--text-muted);font-size:0.85rem;">ยังไม่มี badge — ทำกิจกรรมเพิ่ม!</span>';
+
+            // Notifications
+            try {
+                const nRes = await fetch('/api/notifications?limit=5');
+                const notifs = await nRes.json();
+                document.getElementById('s-notifications').innerHTML = notifs.length === 0 ? '<p style="color:var(--text-muted);">ยังไม่มีแจ้งเตือน</p>' :
+                    notifs.map(n => `<div class="history-card"><div><strong>${n.title}</strong><br><span style="color:var(--text-muted);font-size:0.8rem;">${new Date(n.created_at).toLocaleString('th-TH')}</span></div></div>`).join('');
+            } catch(e) {}
+
+            // History
+            document.getElementById('history-list').innerHTML = data.quizResults?.length > 0 ?
+                data.quizResults.map(r => `<div class="history-card"><div><strong>${r.title}</strong><br><span style="color:var(--text-muted);font-size:0.8rem;">${new Date(r.submitted_at).toLocaleString('th-TH')}</span></div><div style="font-size:1.2rem;font-weight:700;color:${r.score/r.total>=0.8?'#10b981':r.score/r.total>=0.5?'#f59e0b':'#ef4444'}">${r.score}/${r.total}</div></div>`).join('') :
+                '<p style="color:var(--text-muted);">ยังไม่มีข้อมูล</p>';
+
+            document.getElementById('attendance-list').innerHTML = data.attendance?.length > 0 ?
+                data.attendance.map(a => `<div class="history-card"><div>📋 ${a.classroom_name||'ห้อง'}</div><div style="color:var(--text-muted)">${new Date(a.date).toLocaleDateString('th-TH')}</div></div>`).join('') :
+                '<p style="color:var(--text-muted);">ยังไม่มีข้อมูล</p>';
+        } catch(e) { console.error(e); }
+    }
+
+    async function loadStudentQuizzes() {
+        try {
+            const res = await fetch('/api/quizzes');
+            const quizzes = await res.json();
+            const el = document.getElementById('quiz-list-student');
+            el.innerHTML = quizzes.length === 0 ? '<p style="color:var(--text-muted);">ไม่มีแบบทดสอบ</p>' :
+                quizzes.map(q => `<div class="history-card">
+                    <div><strong>${q.title}</strong><br><span style="color:var(--text-muted);font-size:0.8rem;">⏰ ${q.time_limit} นาที</span></div>
+                    <a href="index.html#quiz" class="btn-glow" style="padding:8px 16px;text-decoration:none;font-size:0.85rem;">ทำข้อสอบ</a>
+                </div>`).join('');
+        } catch(e) {}
+    }
+
+    // ========== CHAT ==========
+    let lastMsgId = 0;
+    async function loadChat() {
+        try {
+            const res = await fetch(`/api/chat/general`);
+            const msgs = await res.json();
+            const el = document.getElementById('chat-messages');
+            el.innerHTML = msgs.map(m => `<div class="chat-msg">
+                <span class="name ${m.user_role}">${m.user_role === 'teacher' ? '👨‍🏫' : '🎓'} ${m.user_name}</span>
+                <div class="text">${m.message}</div>
+                <div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px;">${new Date(m.created_at).toLocaleString('th-TH')}</div>
+            </div>`).join('');
+            el.scrollTop = el.scrollHeight;
+            if (msgs.length > 0) lastMsgId = msgs[msgs.length-1].id;
+        } catch(e) {}
+    }
+
+    async function sendChat() {
+        const input = document.getElementById('chat-input');
+        const msg = input.value.trim();
+        if (!msg) return;
+        input.value = '';
+        await fetch('/api/chat/general', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_name: STUDENT.name, user_role: 'student', message: msg })
+        });
+        loadChat();
+    }
+
+    // ========== LEADERBOARD ==========
+    async function loadLeaderboard() {
+        try {
+            const [lbRes, expRes] = await Promise.all([
+                fetch('/api/leaderboard'),
+                fetch('/api/gamification/top')
+            ]);
+            const lb = await lbRes.json();
+            const expTop = await expRes.json();
+            const el = document.getElementById('leaderboard-list');
+            el.innerHTML = '<h4 style="margin-bottom:8px;color:#f59e0b;">📊 คะแนนสอบสูงสุด</h4>';
+            el.innerHTML += lb.length === 0 ? '<p style="color:var(--text-muted);">ยังไม่มีข้อมูล</p>' :
+                lb.map((r,i) => `<div class="lb-row"><div class="lb-rank">${i<3?['🥇','🥈','🥉'][i]:i+1}</div><div style="flex:1"><strong>${r.student_name}</strong><br><span style="color:var(--text-muted);font-size:0.8rem;">${r.quizzes_taken} ครั้ง</span></div><div style="font-weight:700;color:#10b981;">${r.avg_percent}%</div></div>`).join('');
+            el.innerHTML += '<h4 style="margin:20px 0 8px;color:#a855f7;">⭐ EXP สูงสุด</h4>';
+            el.innerHTML += expTop.length === 0 ? '<p style="color:var(--text-muted);">ยังไม่มีข้อมูล</p>' :
+                expTop.map((r,i) => `<div class="lb-row"><div class="lb-rank">${i<3?['🥇','🥈','🥉'][i]:i+1}</div><div style="flex:1"><strong>${r.name}</strong><br><span style="color:var(--text-muted);font-size:0.8rem;">Lv.${r.level}</span></div><div style="font-weight:700;color:#a855f7;">${r.exp} EXP</div></div>`).join('');
+        } catch(e) {}
+    }
+
+    // ========== CHANGE PASSWORD ==========
+    async function changeStudentPassword(e) {
+        e.preventDefault();
+        const errEl = document.getElementById('s-pass-error');
+        const res = await fetch('/api/student/change-password', {
+            method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-student-token': STU_TOKEN },
+            body: JSON.stringify({ oldPassword: document.getElementById('s-old-pass').value, newPassword: document.getElementById('s-new-pass').value })
+        });
+        const data = await res.json();
+        if (data.success) { alert('เปลี่ยนรหัสสำเร็จ!'); e.target.reset(); errEl.style.display = 'none'; }
+        else { errEl.textContent = data.error || 'เกิดข้อผิดพลาด'; errEl.style.display = 'block'; }
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kru Pug - Admin Panel</title>
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .admin-body { max-width: 1100px; margin: 40px auto; padding: 0 20px; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; margin-bottom: 24px; }
+        .form-group label { display: block; margin-bottom: 8px; color: var(--text-muted); }
+        .form-group input, .form-group textarea, .form-group select { margin-bottom: 16px; }
+        .tab-btn { background: transparent; color: #fff; border: 1px solid var(--glass-border); padding: 8px 14px; cursor: pointer; border-radius: 8px; margin: 4px; font-size: 0.85rem; }
+        .tab-btn.active { background: var(--primary); border-color: var(--primary); }
+        .admin-panel { display: none; }
+        .admin-panel.active { display: block; animation: fadeIn 0.4s ease forwards; }
+        .data-table { width:100%; border-collapse:collapse; margin-top:16px; color:#fff; font-size:0.9rem; }
+        .data-table th, .data-table td { padding:10px 8px; text-align:left; border-bottom:1px solid var(--glass-border); }
+        .data-table th { color: var(--primary); }
+        .btn-delete { background:#ef4444; color:#fff; padding:4px 10px; border-radius:6px; font-size:0.8rem; cursor:pointer; border:none; }
+        .btn-delete:hover { background:#dc2626; }
+        .btn-edit { background:#f59e0b; color:#000; padding:4px 10px; border-radius:6px; font-size:0.8rem; cursor:pointer; border:none; margin-right:4px; }
+        .btn-edit:hover { background:#d97706; }
+        .edit-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center; }
+        .edit-box { max-width:500px; width:90%; max-height:80vh; overflow-y:auto; }
+        .dashboard-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin-bottom:24px; }
+        .dash-card { text-align:center; padding:14px; }
+        .dash-card .dash-num { font-size:2rem; font-weight:700; color:#fff; }
+        .dash-card .dash-label { color:var(--text-muted); font-size:0.8rem; }
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        .qr-img { max-width:200px; border-radius:12px; margin:12px 0; background:#fff; padding:8px; }
+        .file-upload-area { border: 2px dashed var(--glass-border); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; margin-bottom:16px; }
+        .file-upload-area:hover { border-color: var(--primary); background: rgba(99,102,241,0.05); }
+        .settings-card { max-width:500px; }
+    </style>
+</head>
+<body>
+    <div class="dynamic-bg"><div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div></div>
+
+    <div class="admin-body">
+        <div class="admin-header">
+            <h1><i class="fa-solid fa-lock" style="color:#ef4444;"></i> ระบบจัดการ (Admin)</h1>
+            <div>
+                <a href="index.html" class="btn-outline" style="text-decoration:none;"><i class="fa-solid fa-arrow-left"></i> กลับหน้าเว็บ</a>
+                <button class="btn-outline" style="border-color:#ef4444;color:#ef4444;margin-left:8px;" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</button>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="glass-card" style="margin-bottom:24px;">
+            <h2 style="margin-bottom:16px;"><i class="fa-solid fa-chart-pie" style="color:var(--primary);"></i> Dashboard</h2>
+            <div class="dashboard-grid">
+                <div class="dash-card glass-card"><p class="dash-num" id="d-systems">-</p><p class="dash-label">ระบบ</p></div>
+                <div class="dash-card glass-card"><p class="dash-num" id="d-materials">-</p><p class="dash-label">สื่อ</p></div>
+                <div class="dash-card glass-card"><p class="dash-num" id="d-clips">-</p><p class="dash-label">คลิป</p></div>
+                <div class="dash-card glass-card"><p class="dash-num" id="d-prompts">-</p><p class="dash-label">Prompt</p></div>
+                <div class="dash-card glass-card"><p class="dash-num" id="d-wfh" style="color:#10b981;">-</p><p class="dash-label">WFH วันนี้</p></div>
+                <div class="dash-card glass-card"><p class="dash-num" id="d-quizzes" style="color:#f59e0b;">-</p><p class="dash-label">แบบทดสอบ</p></div>
+                <div class="dash-card glass-card"><p class="dash-num" id="d-classrooms" style="color:#8b5cf6;">-</p><p class="dash-label">ห้องเรียน</p></div>
+                <div class="dash-card glass-card"><p class="dash-num" id="d-students" style="color:#10b981;">-</p><p class="dash-label">นักเรียน</p></div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div style="margin-bottom:20px; display:flex; flex-wrap:wrap;">
+            <button class="tab-btn active" onclick="switchTab('systems',this)">ระบบ</button>
+            <button class="tab-btn" onclick="switchTab('clips',this)">คลิป</button>
+            <button class="tab-btn" onclick="switchTab('prompts',this)">Prompt</button>
+            <button class="tab-btn" onclick="switchTab('materials',this)">สื่อ</button>
+            <button class="tab-btn" onclick="switchTab('announcements',this)">ข่าว</button>
+            <button class="tab-btn" onclick="switchTab('classroom',this)">🏫 ห้องเรียน</button>
+            <button class="tab-btn" onclick="switchTab('quiz',this)">📝 แบบทดสอบ</button>
+            <button class="tab-btn" onclick="switchTab('analytics',this)">📊 สถิติ</button>
+            <button class="tab-btn" onclick="switchTab('settings',this)">⚙️ ตั้งค่า</button>
+        </div>
+
+        <!-- Systems Panel -->
+        <div id="panel-systems" class="admin-panel active">
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-laptop-code" style="color:var(--primary);"></i> จัดการระบบ</h3>
+                <form id="form-system">
+                    <div class="form-row">
+                        <div class="form-group"><label>Ep/Label</label><input type="text" class="glass-input" id="sys-ep" required></div>
+                        <div class="form-group"><label>ชื่อระบบ</label><input type="text" class="glass-input" id="sys-title" required></div>
+                    </div>
+                    <div class="form-group"><label>รายละเอียด</label><textarea class="glass-input" id="sys-desc" rows="2"></textarea></div>
+                    <div class="form-group"><label>Icon (fa-xxx)</label><input type="text" class="glass-input" id="sys-icon" value="fa-laptop-code"></div>
+                    <button type="submit" class="btn-glow btn-full"><i class="fa-solid fa-plus"></i> เพิ่มระบบ</button>
+                </form>
+                <table class="data-table"><thead><tr><th>ID</th><th>Ep</th><th>ชื่อ</th><th></th></tr></thead><tbody id="table-systems"></tbody></table>
+            </div>
+        </div>
+
+        <!-- Clips Panel -->
+        <div id="panel-clips" class="admin-panel">
+            <div class="glass-card">
+                <h3><i class="fa-brands fa-youtube" style="color:#ef4444;"></i> จัดการคลิป</h3>
+                <form id="form-clip">
+                    <div class="form-row">
+                        <div class="form-group"><label>Ep</label><input type="text" class="glass-input" id="clip-ep" required></div>
+                        <div class="form-group"><label>ชื่อคลิป</label><input type="text" class="glass-input" id="clip-title" required></div>
+                    </div>
+                    <div class="form-group"><label>YouTube URL</label><input type="url" class="glass-input" id="clip-url"></div>
+                    <button type="submit" class="btn-glow btn-full" style="background:#ef4444;"><i class="fa-solid fa-plus"></i> เพิ่มคลิป</button>
+                </form>
+                <table class="data-table"><thead><tr><th>ID</th><th>Ep</th><th>ชื่อ</th><th></th></tr></thead><tbody id="table-clips"></tbody></table>
+            </div>
+        </div>
+
+        <!-- Prompts Panel -->
+        <div id="panel-prompts" class="admin-panel">
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-robot" style="color:#10b981;"></i> จัดการ Prompt</h3>
+                <form id="form-prompt">
+                    <div class="form-group"><label>ชื่อ Prompt</label><input type="text" class="glass-input" id="prompt-title" required></div>
+                    <div class="form-group"><label>คำสั่ง</label><textarea class="glass-input" id="prompt-desc" rows="3"></textarea></div>
+                    <button type="submit" class="btn-glow btn-full" style="background:#10b981;"><i class="fa-solid fa-plus"></i> เพิ่ม Prompt</button>
+                </form>
+                <table class="data-table"><thead><tr><th>ID</th><th>ชื่อ</th><th></th></tr></thead><tbody id="table-prompts"></tbody></table>
+            </div>
+        </div>
+
+        <!-- Materials Panel -->
+        <div id="panel-materials" class="admin-panel">
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-book" style="color:#f59e0b;"></i> จัดการสื่อ</h3>
+                <form id="form-material">
+                    <div class="form-group"><label>ชื่อสื่อ</label><input type="text" class="glass-input" id="mat-title" required></div>
+                    <div class="form-group"><label>รายละเอียด</label><textarea class="glass-input" id="mat-desc" rows="2"></textarea></div>
+                    <div class="form-group">
+                        <label>อัปโหลดไฟล์</label>
+                        <div class="file-upload-area" onclick="document.getElementById('mat-file').click()">
+                            <i class="fa-solid fa-cloud-arrow-up" style="font-size:2rem;color:var(--primary);"></i>
+                            <p style="margin-top:8px;color:var(--text-muted);" id="upload-status">คลิกเพื่อเลือกไฟล์ (PDF, รูปภาพ, ฯลฯ)</p>
+                        </div>
+                        <input type="file" id="mat-file" style="display:none;" onchange="uploadFile(this)">
+                        <input type="hidden" id="mat-url">
+                    </div>
+                    <div class="form-group"><label>Icon (fa-xxx)</label><input type="text" class="glass-input" id="mat-icon" value="fa-file-pdf"></div>
+                    <button type="submit" class="btn-glow btn-full" style="background:#f59e0b;"><i class="fa-solid fa-plus"></i> เพิ่มสื่อ</button>
+                </form>
+                <table class="data-table"><thead><tr><th>ID</th><th>ชื่อ</th><th></th></tr></thead><tbody id="table-materials"></tbody></table>
+            </div>
+        </div>
+
+        <!-- Announcements Panel -->
+        <div id="panel-announcements" class="admin-panel">
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-bullhorn" style="color:#ec4899;"></i> จัดการข่าว</h3>
+                <form id="form-announcement">
+                    <div class="form-group"><label>ข้อความประชาสัมพันธ์</label><textarea class="glass-input" id="ann-text" rows="2" required></textarea></div>
+                    <button type="submit" class="btn-glow btn-full"><i class="fa-solid fa-plus"></i> เพิ่มข่าว</button>
+                </form>
+                <table class="data-table"><thead><tr><th>ID</th><th>ข้อความ</th><th></th></tr></thead><tbody id="table-announcements"></tbody></table>
+            </div>
+        </div>
+
+        <!-- Classroom Panel -->
+        <div id="panel-classroom" class="admin-panel">
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-school" style="color:#8b5cf6;"></i> จัดการห้องเรียน & เช็คชื่อ</h3>
+                <form id="form-classroom">
+                    <div class="form-row">
+                        <div class="form-group"><label>ชื่อห้อง</label><input type="text" class="glass-input" id="class-name" required placeholder="เช่น ม.4/1"></div>
+                        <div class="form-group"><label>ระดับชั้น</label><input type="text" class="glass-input" id="class-grade" placeholder="เช่น ม.4"></div>
+                    </div>
+                    <button type="submit" class="btn-glow btn-full" style="background:#8b5cf6;"><i class="fa-solid fa-plus"></i> สร้างห้องเรียน</button>
+                </form>
+                <div id="classrooms-list"></div>
+
+                <h3 style="margin-top:32px;"><i class="fa-solid fa-user-plus" style="color:#10b981;"></i> เพิ่มนักเรียน</h3>
+                <form id="form-student">
+                    <div class="form-row">
+                        <div class="form-group"><label>เลขที่/รหัส นร.</label><input type="text" class="glass-input" id="stu-id" placeholder="เช่น 01"></div>
+                        <div class="form-group"><label>ชื่อ-สกุล</label><input type="text" class="glass-input" id="stu-name" required></div>
+                    </div>
+                    <div class="form-group"><label>ห้องเรียน</label><select class="glass-input" id="stu-class"></select></div>
+                    <button type="submit" class="btn-glow btn-full" style="background:#10b981;"><i class="fa-solid fa-plus"></i> เพิ่มนักเรียน</button>
+                </form>
+                <table class="data-table"><thead><tr><th>ID</th><th>รหัส</th><th>ชื่อ</th><th>ห้อง</th><th></th></tr></thead><tbody id="table-students"></tbody></table>
+
+                <h3 style="margin-top:32px;"><i class="fa-solid fa-clipboard-check" style="color:#f59e0b;"></i> รายงานเช็คชื่อ</h3>
+                <div class="form-row" style="margin-bottom:16px;">
+                    <select class="glass-input" id="att-class" onchange="loadAttendance()"><option value="">เลือกห้อง</option></select>
+                    <input type="date" class="glass-input" id="att-date" onchange="loadAttendance()">
+                </div>
+                <table class="data-table"><thead><tr><th>ชื่อ</th><th>รหัส</th><th>สถานะ</th><th>เวลา</th></tr></thead><tbody id="table-attendance"></tbody></table>
+                <button class="btn-outline" style="margin-top:12px;" onclick="exportAttendanceCSV()"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+            </div>
+        </div>
+
+        <!-- Quiz Panel -->
+        <div id="panel-quiz" class="admin-panel">
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-pen-ruler" style="color:#f59e0b;"></i> สร้างแบบทดสอบ</h3>
+
+                <!-- AI Generate -->
+                <div class="glass-card" style="margin-bottom:20px;background:linear-gradient(135deg,rgba(236,72,153,0.1),rgba(168,85,247,0.1));border:1px solid rgba(236,72,153,0.3);">
+                    <h4><i class="fa-solid fa-robot" style="color:#ec4899;"></i> สร้างข้อสอบด้วย AI</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>หัวข้อ</label><input type="text" class="glass-input" id="ai-topic" placeholder="เช่น สมการเชิงเส้น ม.ต้น"></div>
+                        <div class="form-group"><label>จำนวนข้อ</label><input type="number" class="glass-input" id="ai-count" value="5" min="1" max="20"></div>
+                    </div>
+                    <button class="btn-glow btn-full" id="btn-ai-gen" style="background:linear-gradient(135deg,#ec4899,#a855f7);" onclick="generateAIQuiz()">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> สร้างข้อสอบ AI</button>
+                </div>
+
+                <form id="form-quiz">
+                    <div class="form-row">
+                        <div class="form-group"><label>ชื่อแบบทดสอบ</label><input type="text" class="glass-input" id="quiz-title" required></div>
+                        <div class="form-group"><label>เวลา (นาที)</label><input type="number" class="glass-input" id="quiz-time" value="30" min="1"></div>
+                    </div>
+                    <div class="form-group"><label>คำอธิบาย</label><input type="text" class="glass-input" id="quiz-desc"></div>
+                    
+                    <div id="questions-builder">
+                        <h4 style="margin:16px 0 8px;color:var(--text-muted);">คำถาม</h4>
+                    </div>
+                    <button type="button" class="btn-outline btn-full" style="margin-bottom:16px;" onclick="addQuestionField()"><i class="fa-solid fa-plus"></i> เพิ่มคำถาม</button>
+                    <button type="submit" class="btn-glow btn-full" style="background:#f59e0b;"><i class="fa-solid fa-save"></i> บันทึกแบบทดสอบ</button>
+                </form>
+
+                <h3 style="margin-top:32px;">แบบทดสอบทั้งหมด</h3>
+                <div id="quiz-list-admin"></div>
+            </div>
+        </div>
+
+        <!-- Analytics Panel -->
+        <div id="panel-analytics" class="admin-panel">
+            <div class="glass-card" style="margin-bottom:24px;">
+                <h3><i class="fa-solid fa-chart-line" style="color:#10b981;"></i> สถิติภาพรวม</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;">
+                    <div class="glass-card" style="padding:16px;"><p style="color:var(--text-muted);margin-bottom:4px;">นักเรียนทั้งหมด</p><p style="font-size:2rem;font-weight:700;color:#10b981;" id="a-students">-</p></div>
+                    <div class="glass-card" style="padding:16px;"><p style="color:var(--text-muted);margin-bottom:4px;">ทำแบบทดสอบทั้งหมด</p><p style="font-size:2rem;font-weight:700;color:#f59e0b;" id="a-attempts">-</p></div>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+                <div class="glass-card" style="padding:16px;">
+                    <h4>เช็คชื่อรายสัปดาห์</h4>
+                    <canvas id="chart-attendance" height="200"></canvas>
+                </div>
+                <div class="glass-card" style="padding:16px;">
+                    <h4>คะแนนเฉลี่ยแบบทดสอบ</h4>
+                    <canvas id="chart-quiz" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div id="panel-settings" class="admin-panel">
+            <div class="glass-card settings-card">
+                <h3><i class="fa-solid fa-gear" style="color:var(--text-muted);"></i> ตั้งค่า</h3>
+                <form id="form-change-password">
+                    <div class="form-group"><label>รหัสเดิม</label><input type="password" class="glass-input" id="old-pass" required></div>
+                    <div class="form-group"><label>รหัสใหม่</label><input type="password" class="glass-input" id="new-pass" required minlength="4"></div>
+                    <div class="form-group"><label>ยืนยันรหัสใหม่</label><input type="password" class="glass-input" id="confirm-pass" required></div>
+                    <p id="pass-error" style="color:#ef4444;display:none;margin-bottom:12px;"></p>
+                    <button type="submit" class="btn-glow btn-full"><i class="fa-solid fa-key"></i> เปลี่ยนรหัสผ่าน</button>
+                </form>
+            </div>
+
+            <!-- API Key Management -->
+            <div class="glass-card" style="margin-top:24px;max-width:600px;">
+                <h3><i class="fa-solid fa-robot" style="color:#ec4899;"></i> จัดการ API Key (OpenRouter)</h3>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">ใช้สำหรับฟีเจอร์ AI Chat และ AI สร้างข้อสอบ</p>
+
+                <div class="form-group">
+                    <label>สถานะปัจจุบัน</label>
+                    <div id="api-key-status" style="padding:10px;border-radius:8px;background:rgba(0,0,0,0.2);font-family:monospace;font-size:0.85rem;color:var(--text-muted);">กำลังโหลด...</div>
+                </div>
+
+                <div class="form-group">
+                    <label>API Key ใหม่</label>
+                    <div style="display:flex;gap:8px;">
+                        <input type="password" class="glass-input" id="api-key-input" placeholder="sk-or-v1-xxxxxxxxx..." style="flex:1;margin:0;font-family:monospace;">
+                        <button class="btn-outline" style="padding:8px 12px;white-space:nowrap;" onclick="toggleKeyVisibility()" title="แสดง/ซ่อน"><i class="fa-solid fa-eye" id="eye-icon"></i></button>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:8px;margin-bottom:16px;">
+                    <button class="btn-glow" style="flex:1;background:#10b981;" onclick="saveApiKey()"><i class="fa-solid fa-floppy-disk"></i> บันทึก</button>
+                    <button class="btn-glow" style="flex:1;background:#3b82f6;" onclick="testApiKey()"><i class="fa-solid fa-flask"></i> ทดสอบ</button>
+                    <button class="btn-glow" style="flex:1;background:#ef4444;" onclick="deleteApiKey()"><i class="fa-solid fa-trash"></i> ลบ</button>
+                </div>
+
+                <div id="api-key-result" style="display:none;padding:12px;border-radius:8px;font-size:0.9rem;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>

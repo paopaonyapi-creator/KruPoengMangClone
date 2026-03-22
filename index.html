@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kru Pug - ศูนย์รวมสื่อคณิตศาสตร์</title>
+    <meta name="description" content="ศูนย์รวมระบบเพื่อการศึกษา สื่อการสอน คลิปวิดีโอ และ AI Prompt โดยครู Pug">
+    <link rel="stylesheet" href="index.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#a855f7">
+</head>
+<body>
+    <div class="dynamic-bg">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="glass-navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fa-solid fa-calculator"></i>
+                <span>ครูพัก (Pug) คณิตศาสตร์</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#" data-page="home" class="active"><i class="fa-solid fa-house"></i> หน้าแรก</a></li>
+                <li><a href="#" data-page="systems"><i class="fa-solid fa-laptop-code"></i> ระบบการศึกษา</a></li>
+                <li><a href="#" data-page="materials"><i class="fa-solid fa-book-open"></i> สื่อการสอน</a></li>
+                <li><a href="#" data-page="clips"><i class="fa-solid fa-video"></i> คลิปการสอน</a></li>
+                <li><a href="#" data-page="prompts"><i class="fa-solid fa-robot"></i> AI Prompt</a></li>
+            </ul>
+            <div class="nav-actions">
+                <button id="notif-bell" class="btn-outline btn-theme" title="แจ้งเตือน" onclick="toggleNotifPanel()">
+                    <i class="fa-solid fa-bell"></i>
+                    <span id="notif-badge" class="notif-badge" style="display:none;">0</span>
+                </button>
+                <button id="theme-toggle" class="btn-outline btn-theme" title="สลับธีม"><i class="fa-solid fa-moon"></i></button>
+                <button id="btn-admin" class="btn-outline btn-admin"><i class="fa-solid fa-lock"></i> Admin</button>
+                <button class="mobile-toggle"><i class="fa-solid fa-bars"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="content-container">
+        <!-- Search Bar -->
+        <div class="search-bar glass-card" style="margin-bottom:24px; padding:12px 20px; display:flex; align-items:center; gap:12px;">
+            <i class="fa-solid fa-magnifying-glass" style="color:var(--text-muted);font-size:1.2rem;"></i>
+            <input type="text" id="search-input" class="glass-input" placeholder="ค้นหาระบบ สื่อ คลิป หรือ Prompt..." style="border:none;background:transparent;flex:1;margin:0;padding:8px 0;">
+            <div id="search-results" class="search-results"></div>
+        </div>
+
+        <!-- Home Page -->
+        <section id="page-home" class="page-section active">
+            <!-- Profile Section -->
+            <div class="profile-section glass-card animate-in">
+                <div class="profile-avatar">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                </div>
+                <div class="profile-info">
+                    <h2>ครูพัก (Pug)</h2>
+                    <p class="profile-role">ครูคณิตศาสตร์ | นักพัฒนาระบบการศึกษา</p>
+                    <p class="profile-desc">ศูนย์รวมสื่อคุณภาพ ระบบเพื่อการศึกษา คลิปสอนคณิต และ AI Prompt สำหรับครูคณิตศาสตร์ทุกคน</p>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="quick-links animate-in">
+                <a href="quiz.html" class="quick-link glass-card">
+                    <i class="fa-solid fa-pen-ruler" style="color:#f59e0b;"></i>
+                    <span>แบบทดสอบ</span>
+                </a>
+                <a href="student.html" class="quick-link glass-card">
+                    <i class="fa-solid fa-user-graduate" style="color:#10b981;"></i>
+                    <span>พอร์ทัลนักเรียน</span>
+                </a>
+                <a href="calendar.html" class="quick-link glass-card">
+                    <i class="fa-solid fa-calendar-days" style="color:#3b82f6;"></i>
+                    <span>ตารางสอน</span>
+                </a>
+                <a href="wfh.html" class="quick-link glass-card">
+                    <i class="fa-solid fa-house-laptop" style="color:#8b5cf6;"></i>
+                    <span>WFH</span>
+                </a>
+            </div>
+
+            <div class="hero-section glass-card animate-in">
+                <h1>ศูนย์รวมสื่อคุณภาพเพื่อครูคณิต <span class="highlight">ดาวน์โหลดฟรี!</span></h1>
+                <p>ระบบเพื่อการศึกษา สื่อการสอน คลิปวิดีโอ และ AI Prompt โดยครู Pug</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card glass-card animate-in">
+                    <div class="stat-icon"><i class="fa-solid fa-laptop-code"></i></div>
+                    <div class="stat-info"><h3>ระบบการศึกษา</h3><p id="count-systems" class="stat-num">0</p></div>
+                </div>
+                <div class="stat-card glass-card animate-in">
+                    <div class="stat-icon"><i class="fa-solid fa-book-open"></i></div>
+                    <div class="stat-info"><h3>สื่อการสอน</h3><p id="count-materials" class="stat-num">0</p></div>
+                </div>
+                <div class="stat-card glass-card animate-in">
+                    <div class="stat-icon"><i class="fa-solid fa-video"></i></div>
+                    <div class="stat-info"><h3>คลิปการสอน</h3><p id="count-clips" class="stat-num">0</p></div>
+                </div>
+                <div class="stat-card glass-card animate-in">
+                    <div class="stat-icon"><i class="fa-solid fa-robot"></i></div>
+                    <div class="stat-info"><h3>AI Prompt</h3><p id="count-prompts" class="stat-num">0</p></div>
+                </div>
+            </div>
+
+            <div class="home-layout">
+                <div class="pr-section glass-card animate-in">
+                    <h2><i class="fa-solid fa-bullhorn"></i> ประชาสัมพันธ์</h2>
+                    <ul class="pr-list" id="announcement-list">
+                        <li>กำลังโหลดข่าวสาร...</li>
+                    </ul>
+                </div>
+                <div class="popular-section glass-card animate-in">
+                    <h2><i class="fa-solid fa-fire"></i> ยอดนิยมประจำสัปดาห์</h2>
+                    <ul class="popular-list" id="popular-content-list"></ul>
+                </div>
+            </div>
+
+            <!-- Leaderboard Section -->
+            <div class="glass-card animate-in" style="margin-top:24px;">
+                <h2><i class="fa-solid fa-trophy" style="color:#fbbf24;"></i> 🏆 กระดานคะแนน</h2>
+                <div id="home-leaderboard" style="margin-top:12px;">กำลังโหลด...</div>
+            </div>
+        </section>
+
+        <!-- Dynamic Pages Containers -->
+        <section id="page-systems" class="page-section hidden">
+            <h2 class="page-title">ระบบเพื่อการศึกษา</h2>
+            <div class="grid-container" id="grid-systems"></div>
+        </section>
+        <section id="page-materials" class="page-section hidden">
+            <h2 class="page-title">สื่อการสอน</h2>
+            <div class="grid-container" id="grid-materials"></div>
+        </section>
+        <section id="page-clips" class="page-section hidden">
+            <h2 class="page-title">คลิปการสอน</h2>
+            <div class="grid-container" id="grid-clips"></div>
+        </section>
+        <section id="page-prompts" class="page-section hidden">
+            <h2 class="page-title">AI Prompt</h2>
+            <div class="grid-container" id="grid-prompts"></div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="glass-footer">
+        <div class="footer-container">
+            <p><i class="fa-solid fa-calculator"></i> ครูพัก (Pug) คณิตศาสตร์ — ศูนย์รวมสื่อคณิตศาสตร์</p>
+            <p style="color:var(--text-muted);font-size:0.85rem;">© 2026 Kru Pug Hub. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Admin Modal -->
+    <div id="modal-admin" class="modal-overlay hidden">
+        <div class="modal-content glass-card">
+            <button class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-body text-center">
+                <h2><i class="fa-solid fa-lock text-blue"></i> เข้าสู่ระบบจัดการ (Admin)</h2>
+                <form id="admin-login-form" autocomplete="off">
+                    <div class="form-group">
+                        <input type="password" id="admin-pass" class="glass-input" placeholder="กรอกรหัสผ่าน" required>
+                    </div>
+                    <button type="submit" class="btn-glow btn-full">เข้าสู่ระบบ</button>
+                </form>
+                <p id="admin-error" class="error-text hidden">รหัสผ่านไม่ถูกต้อง</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- Notification Panel -->
+    <div id="notif-panel" class="notif-panel hidden">
+        <div class="glass-card" style="max-height:400px;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <h3><i class="fa-solid fa-bell" style="color:#f59e0b;"></i> แจ้งเตือน</h3>
+                <button class="btn-outline" style="font-size:0.75rem;padding:4px 10px;" onclick="markAllRead()">อ่านทั้งหมด</button>
+            </div>
+            <div id="notif-list"></div>
+        </div>
+    </div>
+
+    <!-- Floating AI Chat -->
+    <button id="ai-fab" class="ai-fab" onclick="toggleAIChat()">
+        <i class="fa-solid fa-robot"></i>
+    </button>
+    <div id="ai-chat-panel" class="ai-chat-panel hidden">
+        <div class="glass-card" style="height:100%;display:flex;flex-direction:column;padding:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <h3><i class="fa-solid fa-robot" style="color:#ec4899;"></i> ครูพัก AI</h3>
+                <button class="btn-outline" style="padding:4px 10px;" onclick="toggleAIChat()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="ai-chat-messages" id="ai-chat-messages" style="flex:1;overflow-y:auto;margin-bottom:12px;">
+                <div class="ai-msg ai"><div class="ai-bubble">สวัสดีครับ! ผม<b>ครูพัก AI</b> 🤖 ถามอะไรเกี่ยวกับคณิตได้เลยนะ!</div></div>
+            </div>
+            <div style="display:flex;gap:8px;">
+                <input type="text" class="glass-input" id="ai-input" placeholder="พิมพ์คำถาม..." style="margin:0;flex:1;" onkeypress="if(event.key==='Enter')sendAI()">
+                <button class="btn-glow" onclick="sendAI()" style="padding:10px 14px;"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

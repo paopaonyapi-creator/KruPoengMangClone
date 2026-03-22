@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kru Pug - ตารางสอน</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="index.css">
+    <style>
+        .cal-container { max-width: 900px; margin: 20px auto; padding: 0 16px; }
+        .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .cal-nav { display: flex; gap: 8px; align-items: center; }
+        .cal-nav button { background: var(--glass-bg); border: 1px solid var(--glass-border); color: #fff; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s; }
+        .cal-nav button:hover { background: var(--primary); }
+        .cal-week-label { font-size: 1.1rem; font-weight: 600; min-width: 200px; text-align: center; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+        .cal-day-header { text-align: center; padding: 8px; font-weight: 600; color: var(--text-muted); font-size: 0.85rem; }
+        .cal-day { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; min-height: 120px; padding: 10px; transition: all 0.3s; }
+        .cal-day:hover { border-color: var(--primary); }
+        .cal-day.today { border-color: #10b981; box-shadow: 0 0 12px rgba(16,185,129,0.3); }
+        .cal-date { font-weight: 700; font-size: 1.1rem; margin-bottom: 6px; }
+        .cal-event { font-size: 0.75rem; padding: 4px 6px; border-radius: 4px; margin-bottom: 4px; cursor: pointer; }
+        .cal-event.class { background: rgba(59,130,246,0.2); color: #60a5fa; }
+        .cal-event.exam { background: rgba(239,68,68,0.2); color: #f87171; }
+        .cal-event.event { background: rgba(168,85,247,0.2); color: #c084fc; }
+        .cal-event.holiday { background: rgba(16,185,129,0.2); color: #34d399; }
+        .event-form { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+        .event-form h3 { margin-bottom: 12px; }
+        .ef-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        @media (max-width: 768px) {
+            .cal-grid { grid-template-columns: 1fr; }
+            .cal-day-header { display: none; }
+            .ef-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="cal-container">
+        <div style="margin-bottom:16px;"><a href="index.html" style="color:var(--text-muted);text-decoration:none;">&larr; กลับหน้าหลัก</a></div>
+        <h1 style="text-align:center;margin-bottom:8px;">📅 ตารางสอน / ปฏิทิน</h1>
+
+        <div class="cal-header">
+            <div class="cal-nav">
+                <button onclick="changeWeek(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                <span class="cal-week-label" id="week-label"></span>
+                <button onclick="changeWeek(1)"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+            <button class="cal-nav" style="background:var(--primary);border:none;color:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;" onclick="goToday()">วันนี้</button>
+        </div>
+
+        <!-- Admin: Add event form (hidden by default) -->
+        <div id="event-form-wrap" style="display:none;">
+            <div class="event-form">
+                <h3><i class="fa-solid fa-plus"></i> เพิ่มกิจกรรม</h3>
+                <div class="ef-row">
+                    <div class="form-group"><label>ชื่อกิจกรรม</label><input class="glass-input" id="ev-title" required></div>
+                    <div class="form-group"><label>วันที่</label><input type="date" class="glass-input" id="ev-date" required></div>
+                    <div class="form-group"><label>ประเภท</label>
+                        <select class="glass-input" id="ev-type">
+                            <option value="class">📘 เรียน</option>
+                            <option value="exam">📝 สอบ</option>
+                            <option value="event">🎉 กิจกรรม</option>
+                            <option value="holiday">🌴 วันหยุด</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="ef-row">
+                    <div class="form-group"><label>เวลาเริ่ม</label><input type="time" class="glass-input" id="ev-start"></div>
+                    <div class="form-group"><label>เวลาจบ</label><input type="time" class="glass-input" id="ev-end"></div>
+                    <div class="form-group"><label>รายละเอียด</label><input class="glass-input" id="ev-desc" placeholder="(ไม่บังคับ)"></div>
+                </div>
+                <button class="btn-glow" onclick="addEvent()"><i class="fa-solid fa-plus"></i> เพิ่ม</button>
+            </div>
+        </div>
+
+        <div class="cal-grid">
+            <div class="cal-day-header">จ.</div><div class="cal-day-header">อ.</div><div class="cal-day-header">พ.</div>
+            <div class="cal-day-header">พฤ.</div><div class="cal-day-header">ศ.</div><div class="cal-day-header">ส.</div><div class="cal-day-header">อา.</div>
+            <div id="cal-body"></div>
+        </div>
+        <div id="calendar-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;"></div>
+    </div>
+
+    <script>
+    const TOKEN = localStorage.getItem('adminToken');
+    if (TOKEN) document.getElementById('event-form-wrap').style.display = 'block';
+
+    let currentMonday = getMonday(new Date());
+
+    function getMonday(d) {
+        d = new Date(d);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        return new Date(d.setDate(diff));
+    }
+
+    function formatDate(d) {
+        return d.toISOString().split('T')[0];
+    }
+
+    function changeWeek(dir) {
+        currentMonday.setDate(currentMonday.getDate() + (dir * 7));
+        renderCalendar();
+    }
+
+    function goToday() {
+        currentMonday = getMonday(new Date());
+        renderCalendar();
+    }
+
+    async function renderCalendar() {
+        const weekStr = formatDate(currentMonday);
+        const endDate = new Date(currentMonday);
+        endDate.setDate(endDate.getDate() + 6);
+        document.getElementById('week-label').textContent =
+            `${currentMonday.toLocaleDateString('th-TH', {day:'numeric',month:'short'})} - ${endDate.toLocaleDateString('th-TH', {day:'numeric',month:'short',year:'numeric'})}`;
+
+        let events = [];
+        try {
+            const res = await fetch(`/api/schedule?week=${weekStr}`);
+            events = await res.json();
+        } catch(e) {}
+
+        const today = formatDate(new Date());
+        const grid = document.getElementById('calendar-grid');
+        grid.innerHTML = '';
+
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(currentMonday);
+            d.setDate(d.getDate() + i);
+            const dateStr = formatDate(d);
+            const isToday = dateStr === today;
+            const dayEvents = events.filter(e => e.event_date?.split('T')[0] === dateStr);
+
+            const typeEmoji = { class: '📘', exam: '📝', event: '🎉', holiday: '🌴' };
+            const cell = document.createElement('div');
+            cell.className = 'cal-day' + (isToday ? ' today' : '');
+            cell.innerHTML = `
+                <div class="cal-date" style="${isToday ? 'color:#10b981' : ''}">${d.getDate()} ${['จ','อ','พ','พฤ','ศ','ส','อา'][i]}</div>
+                ${dayEvents.map(ev => `
+                    <div class="cal-event ${ev.type}" title="${ev.description||''}">
+                        ${typeEmoji[ev.type]||''} ${ev.time_start ? ev.time_start+' ' : ''}${ev.title}
+                        ${TOKEN ? `<span style="cursor:pointer;float:right;" onclick="delEvent(${ev.id})">✕</span>` : ''}
+                    </div>
+                `).join('')}
+            `;
+            grid.appendChild(cell);
+        }
+    }
+
+    async function addEvent() {
+        const body = {
+            title: document.getElementById('ev-title').value,
+            event_date: document.getElementById('ev-date').value,
+            time_start: document.getElementById('ev-start').value,
+            time_end: document.getElementById('ev-end').value,
+            type: document.getElementById('ev-type').value,
+            description: document.getElementById('ev-desc').value
+        };
+        if (!body.title || !body.event_date) { alert('กรุณากรอกข้อมูล'); return; }
+        await fetch('/api/admin/schedule', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': TOKEN },
+            body: JSON.stringify(body)
+        });
+        document.getElementById('ev-title').value = '';
+        document.getElementById('ev-desc').value = '';
+        renderCalendar();
+    }
+
+    async function delEvent(id) {
+        if (!confirm('ลบกิจกรรมนี้?')) return;
+        await fetch(`/api/admin/schedule/${id}`, { method: 'DELETE', headers: { 'x-admin-token': TOKEN } });
+        renderCalendar();
+    }
+
+    renderCalendar();
+    </script>
+</body>
+</html>

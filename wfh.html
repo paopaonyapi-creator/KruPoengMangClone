@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบลงเวลา WFH - Kru Pug</title>
+    <link rel="stylesheet" href="index.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .app-container { max-width: 900px; margin: 40px auto; padding: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: var(--text-muted); }
+        .form-group input, .form-group select, .form-group textarea { margin-bottom: 16px; width: 100%; box-sizing: border-box; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; color: #fff; font-size: 0.9rem; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--glass-border); }
+        th { color: var(--primary); font-weight: 500; }
+        .status-badge { background: #10b981; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <div class="dynamic-bg">
+        <div class="blob blob-1"></div><div class="blob blob-2" style="background:radial-gradient(circle,#10b981 0%,transparent 70%);"></div>
+    </div>
+    
+    <nav class="glass-navbar">
+        <div class="nav-container">
+            <div class="logo"><i class="fa-solid fa-house-user" style="color:#10b981"></i> <span>ระบบลงเวลา WFH</span></div>
+            <div class="nav-actions">
+                <button class="btn-outline" onclick="window.location.href='index.html'"><i class="fa-solid fa-arrow-left"></i> กลับหน้าศูนย์รวม</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="app-container">
+        <div class="glass-card" style="margin-bottom:24px;">
+            <h2 style="margin-bottom:20px;color:#10b981;"><i class="fa-solid fa-clock"></i> บันทึกเวลาปฏิบัติงานที่บ้าน (Work From Home)</h2>
+            <form id="wfh-form">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group">
+                        <label>ชื่อ-นามสกุล</label>
+                        <input type="text" id="wfh-name" class="glass-input" required placeholder="นาย/นาง/นางสาว...">
+                    </div>
+                    <div class="form-group">
+                        <label>ตำแหน่ง</label>
+                        <select id="wfh-role" class="glass-input" required>
+                            <option value="ครูผู้สอน">ครูผู้สอน</option>
+                            <option value="เจ้าหน้าที่ธุรการ">เจ้าหน้าที่ธุรการ</option>
+                            <option value="ผู้บริหาร">ผู้บริหาร</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>รายงานการปฏิบัติงานวันนี้</label>
+                    <textarea id="wfh-note" class="glass-input" rows="3" required placeholder="ระบุงานที่รับผิดชอบ..."></textarea>
+                </div>
+                <button type="submit" class="btn-glow btn-full" style="background:linear-gradient(135deg,#10b981,#059669);" id="btn-submit">
+                    <i class="fa-solid fa-location-dot"></i> ลงเวลาเข้างานและระบุพิกัด
+                </button>
+            </form>
+        </div>
+
+        <div class="glass-card">
+            <h3 style="margin-bottom:15px;"><i class="fa-solid fa-list-check"></i> ประวัติการลงเวลา</h3>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead><tr><th>เข้างาน</th><th>ออกงาน</th><th>ชื่อ</th><th>ตำแหน่ง</th><th>รายงาน</th><th>สถานะ</th></tr></thead>
+                    <tbody id="wfh-logs"><tr><td colspan="6" style="text-align:center;">กำลังโหลด...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="wfh.js"></script>
+</body>
+</html>
