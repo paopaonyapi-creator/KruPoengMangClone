@@ -1,8 +1,13 @@
 const mysql = require('mysql2/promise');
+require('dotenv').config();
 
 async function migrate() {
     const connection = await mysql.createConnection({
-        host: 'localhost', user: 'root', password: '', database: 'krupug_db'
+        host: process.env.DB_HOST || process.env.MYSQLHOST || 'localhost',
+        user: process.env.DB_USER || process.env.MYSQLUSER || 'root',
+        password: process.env.DB_PASS || process.env.MYSQLPASSWORD || '',
+        database: process.env.DB_NAME || process.env.MYSQLDATABASE || 'krupug_db',
+        port: process.env.DB_PORT || process.env.MYSQLPORT || 3306
     });
 
     // Original tables
