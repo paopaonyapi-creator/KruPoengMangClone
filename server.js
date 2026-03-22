@@ -838,7 +838,31 @@ app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// Auto-migrate on startup
+async function autoMigrate() {
+    try {
+        const conn = pool;
+        await conn.query(`CREATE TABLE IF NOT EXISTS materials (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), desc_text TEXT, icon VARCHAR(100) DEFAULT 'fa-file-pdf', file_url TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS wfh_logs (id INT AUTO_INCREMENT PRIMARY KEY, log_date DATE, morning_task TEXT, afternoon_task TEXT, note TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS announcements (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), content TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS admin_settings (id INT AUTO_INCREMENT PRIMARY KEY, setting_key VARCHAR(100) UNIQUE, setting_value TEXT)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS classrooms (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), description TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS students (id INT AUTO_INCREMENT PRIMARY KEY, student_id VARCHAR(50) UNIQUE, name VARCHAR(255), classroom_id INT, password VARCHAR(255) DEFAULT '1234', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (classroom_id) REFERENCES classrooms(id) ON DELETE SET NULL)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS attendance (id INT AUTO_INCREMENT PRIMARY KEY, student_id INT, classroom_id INT, date DATE, status ENUM('present','absent','late') DEFAULT 'present', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS quizzes (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), description TEXT, time_limit INT DEFAULT 30, is_active BOOLEAN DEFAULT TRUE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS quiz_questions (id INT AUTO_INCREMENT PRIMARY KEY, quiz_id INT, question TEXT, options JSON, correct_answer INT DEFAULT 0, FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS quiz_results (id INT AUTO_INCREMENT PRIMARY KEY, quiz_id INT NOT NULL, student_name VARCHAR(255), score INT DEFAULT 0, total INT DEFAULT 0, answers JSON, submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS notifications (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255) NOT NULL, message TEXT, type ENUM('quiz','announcement','attendance','system') DEFAULT 'system', is_read BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS ai_chats (id INT AUTO_INCREMENT PRIMARY KEY, user_name VARCHAR(255), message TEXT, response TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS schedule_events (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255) NOT NULL, event_date DATE, time_start VARCHAR(10), time_end VARCHAR(10), type ENUM('class','exam','event','holiday') DEFAULT 'class', description TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS chat_messages (id INT AUTO_INCREMENT PRIMARY KEY, room VARCHAR(100) DEFAULT 'general', user_name VARCHAR(255), user_role ENUM('student','teacher') DEFAULT 'student', message TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS student_stats (id INT AUTO_INCREMENT PRIMARY KEY, student_id INT NOT NULL, exp INT DEFAULT 0, level INT DEFAULT 1, badges JSON, streak_days INT DEFAULT 0, last_activity DATE, FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE)`);
+        console.log('Auto-migration complete!');
+    } catch(e) { console.error('Migration error:', e.message); }
+}
+
 // Start Server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     console.log(`Server is running on http://localhost:${PORT}`);
+    await autoMigrate();
 });
