@@ -546,3 +546,271 @@ function showApiResult(success, msg) {
     el.style.color = success === true ? '#10b981' : success === false ? '#ef4444' : '#3b82f6';
     el.textContent = msg;
 }
+
+// ===================== PHASE 5: ANALYTICS =====================
+
+let chartInstances = {};
+
+async function loadAnalytics() {
+    try {
+        const res = await fetch('/api/admin/analytics', { headers: { 'x-admin-token': TOKEN } });
+        const data = await res.json();
+        document.getElementById('a-students').textContent = data.total_students;
+        document.getElementById('a-attempts').textContent = data.total_attempts;
+
+        // Destroy existing charts
+        Object.values(chartInstances).forEach(c => c.destroy && c.destroy());
+
+        // Attendance chart
+        const attCtx = document.getElementById('chart-attendance').getContext('2d');
+        chartInstances.att = new Chart(attCtx, {
+            type: 'bar',
+            data: {
+                labels: data.weeklyAtt.map(d => new Date(d.d).toLocaleDateString('th-TH', {weekday:'short',day:'numeric'})),
+                datasets: [
+                    { label: 'มาเรียน', data: data.weeklyAtt.map(d => d.present_count), backgroundColor: '#10b981' },
+                    { label: 'สาย', data: data.weeklyAtt.map(d => d.late_count), backgroundColor: '#f59e0b' },
+                    { label: 'ขาด', data: data.weeklyAtt.map(d => d.absent_count), backgroundColor: '#ef4444' }
+                ]
+            },
+            options: { responsive: true, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }, plugins: { legend: { labels: { color: '#a0aec0' } } } }
+        });
+
+        // Quiz averages chart
+        const quizCtx = document.getElementById('chart-quiz').getContext('2d');
+        chartInstances.quiz = new Chart(quizCtx, {
+            type: 'bar',
+            data: {
+                labels: data.quizAvg.map(q => q.title.length > 15 ? q.title.substring(0,15)+'...' : q.title),
+                datasets: [{ label: 'คะแนนเฉลี่ย (%)', data: data.quizAvg.map(q => q.avg_score), backgroundColor: 'rgba(99,102,241,0.7)', borderColor: '#6366f1', borderWidth: 1 }]
+            },
+            options: { responsive: true, scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { labels: { color: '#a0aec0' } } } }
+        });
+
+        // EXP leaderboard chart
+        const expCtx = document.getElementById('chart-exp').getContext('2d');
+        chartInstances.exp = new Chart(expCtx, {
+            type: 'bar',
+            data: {
+                labels: data.expDist.map(e => e.name),
+                datasets: [{ label: 'EXP', data: data.expDist.map(e => e.exp), backgroundColor: 'rgba(168,85,247,0.7)', borderColor: '#a855f7', borderWidth: 1 }]
+            },
+            options: { indexAxis: 'y', responsive: true, plugins: { legend: { labels: { color: '#a0aec0' } } } }
+        });
+
+        // Recent activity
+        const actEl = document.getElementById('recent-activity');
+        actEl.innerHTML = data.recentAct.length ?
+            data.recentAct.map(a => `<div style="padding:8px 0;border-bottom:1px solid var(--glass-border);font-size:0.85rem;">
+                <span style="color:${a.type==='quiz'?'#f59e0b':'#10b981'};">${a.type==='quiz'?'📝':'✅'}</span> ${a.text}
+                <span style="float:right;color:var(--text-muted);font-size:0.75rem;">${new Date(a.ts).toLocaleString('th-TH')}</span>
+            </div>`).join('') :
+            '<p style="color:var(--text-muted);text-align:center;padding:20px;">ยังไม่มีกิจกรรม</p>';
+    } catch (e) { console.error('Analytics error:', e); }
+}
+
+// ===================== PHASE 5: AI QUIZ GENERATOR =====================
+
+async function generateAIQuiz() {
+    const topic = document.getElementById('ai-topic').value.trim();
+    const count = parseInt(document.getElementById('ai-count').value) || 5;
+    const difficulty = document.getElementById('ai-difficulty')?.value || 'ปานกลาง';
+    if (!topic) { alert('กรุณาใส่หัวข้อ'); return; }
+    const btn = document.getElementById('btn-ai-gen');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> AI กำลังสร้างข้อสอบ...';
+    try {
+        const res = await fetch('/api/admin/generate-quiz', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': TOKEN },
+            body: JSON.stringify({ topic, count, difficulty })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(`✅ สร้างแบบทดสอบ ${data.questions} ข้อ สำเร็จ! (ID: ${data.quiz_id})`);
+            loadQuizList();
+        } else {
+            alert('❌ ' + (data.error || 'ไม่สามารถสร้างได้'));
+        }
+    } catch (e) { alert('เกิดข้อผิดพลาด'); }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> สร้างข้อสอบ AI';
+}
+
+// ===================== PHASE 5: EXCEL EXPORT =====================
+
+async function exportExcel(type) {
+    try {
+        const res = await fetch(`/api/admin/export/${type}`, { headers: { 'x-admin-token': TOKEN } });
+        const data = await res.json();
+        if (!data.length) { alert('ไม่มีข้อมูล'); return; }
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, type);
+        XLSX.writeFile(wb, `krupug_${type}_${new Date().toISOString().split('T')[0]}.xlsx`);
+        showToast('📥 ดาวน์โหลด Excel สำเร็จ!');
+    } catch (e) { alert('เกิดข้อผิดพลาด'); console.error(e); }
+}
+
+// ===================== PHASE 5: CLASS GOALS =====================
+
+async function saveGoal() {
+    const classroom_id = document.getElementById('goal-classroom').value;
+    const target_avg = document.getElementById('goal-target').value;
+    const description = document.getElementById('goal-desc').value;
+    if (!classroom_id || !target_avg) { alert('กรุณาเลือกห้องและใส่เป้า %'); return; }
+    try {
+        await apiPost('/api/admin/goals', { classroom_id, target_avg, description });
+        showToast('✅ บันทึกเป้าหมายสำเร็จ!');
+        loadGoals();
+    } catch (e) { alert('เกิดข้อผิดพลาด'); }
+}
+
+async function loadGoals() {
+    try {
+        const res = await fetch('/api/admin/goals', { headers: { 'x-admin-token': TOKEN } });
+        const goals = await res.json();
+        const el = document.getElementById('goals-list');
+        el.innerHTML = goals.length ? goals.map(g => {
+            const pct = g.current_avg || 0;
+            const target = g.target_avg;
+            const progress = Math.min(100, (pct / target) * 100);
+            const color = progress >= 100 ? '#10b981' : progress >= 70 ? '#f59e0b' : '#ef4444';
+            return `<div class="glass-card" style="margin:8px 0;padding:16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <strong>${g.classroom_name}</strong>
+                    <span style="color:${color};font-weight:700;">${pct||0}% / ${target}%</span>
+                </div>
+                <div style="background:rgba(255,255,255,0.1);border-radius:8px;height:12px;overflow:hidden;">
+                    <div style="background:${color};height:100%;width:${progress}%;border-radius:8px;transition:width 0.5s;"></div>
+                </div>
+                ${g.description ? `<p style="color:var(--text-muted);font-size:0.8rem;margin-top:4px;">${g.description}</p>` : ''}
+            </div>`;
+        }).join('') : '<p style="color:var(--text-muted);text-align:center;">ยังไม่มีเป้าหมาย</p>';
+    } catch (e) { console.error(e); }
+}
+
+// ===================== PHASE 5: TEACHER MANAGEMENT =====================
+
+document.getElementById('form-teacher')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('tc-name').value.trim();
+    const email = document.getElementById('tc-email').value.trim();
+    const password = document.getElementById('tc-pass').value.trim();
+    const role = document.getElementById('tc-role').value;
+    if (!name || !email) return;
+    try {
+        await apiPost('/api/admin/teachers', { name, email, password, role });
+        showToast('✅ เพิ่มครูสำเร็จ!');
+        document.getElementById('form-teacher').reset();
+        document.getElementById('tc-pass').value = '1234';
+        loadTeachers();
+    } catch (e) { alert('เกิดข้อผิดพลาด'); }
+});
+
+async function loadTeachers() {
+    try {
+        const res = await fetch('/api/admin/teachers', { headers: { 'x-admin-token': TOKEN } });
+        const teachers = await res.json();
+        document.getElementById('table-teachers').innerHTML = teachers.length ?
+            teachers.map(t => `<tr><td>${t.id}</td><td>${t.name}</td><td>${t.email}</td><td>${t.role}</td>
+                <td><button class="btn-delete" onclick="deleteTeacher(${t.id})"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('') :
+            '<tr><td colspan="5" style="color:var(--text-muted);">ยังไม่มีครู</td></tr>';
+    } catch (e) { console.error(e); }
+}
+
+async function deleteTeacher(id) {
+    if (!confirm('ยืนยันลบครู?')) return;
+    await fetch(`/api/admin/teachers/${id}`, { method: 'DELETE', headers: { 'x-admin-token': TOKEN } });
+    loadTeachers();
+}
+
+// ===================== PHASE 5: NOTIFICATIONS =====================
+
+async function sendNotification() {
+    const title = document.getElementById('noti-title').value.trim();
+    const message = document.getElementById('noti-msg').value.trim();
+    const type = document.getElementById('noti-type').value;
+    const classroom_id = document.getElementById('noti-class').value || null;
+    if (!title) { alert('กรุณาใส่หัวข้อ'); return; }
+    try {
+        await apiPost('/api/admin/notify', { title, message, type, classroom_id });
+        showToast('🔔 ส่งแจ้งเตือนสำเร็จ!');
+        document.getElementById('noti-title').value = '';
+        document.getElementById('noti-msg').value = '';
+    } catch (e) { alert('เกิดข้อผิดพลาด'); }
+}
+
+// ===================== PHASE 5: PARENT CODE =====================
+
+async function generateParentCode() {
+    const select = document.getElementById('parent-student');
+    const student_id = select.value;
+    if (!student_id) { alert('กรุณาเลือกนักเรียน'); return; }
+    try {
+        const res = await fetch('/api/admin/parent-code', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': TOKEN },
+            body: JSON.stringify({ student_id, parent_name: 'ผู้ปกครอง' })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const el = document.getElementById('parent-code-result');
+            el.style.display = 'block';
+            el.innerHTML = `<div style="padding:12px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:8px;">
+                <p>✅ รหัสผู้ปกครอง: <strong style="font-size:1.3rem;color:#10b981;">${data.code}</strong></p>
+                <p style="color:var(--text-muted);font-size:0.8rem;margin-top:4px;">ให้ผู้ปกครองใช้รหัสนี้ที่หน้า parent.html</p>
+            </div>`;
+        }
+    } catch (e) { alert('เกิดข้อผิดพลาด'); }
+}
+
+function showToast(msg) {
+    const toast = document.createElement('div');
+    toast.className = 'toast-msg';
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
+}
+
+// Updated switchTab to load new panels
+const origSwitchTab = switchTab;
+switchTab = function(tabId, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + tabId).classList.add('active');
+    if (tabId === 'analytics') loadAnalytics();
+    if (tabId === 'goals') { loadGoals(); populateGoalClassrooms(); }
+    if (tabId === 'teachers') loadTeachers();
+    if (tabId === 'notify') populateNotiClassrooms();
+};
+
+async function populateGoalClassrooms() {
+    try {
+        const res = await fetch('/api/classrooms');
+        const data = await res.json();
+        const sel = document.getElementById('goal-classroom');
+        sel.innerHTML = '<option value="">เลือกห้อง</option>' + data.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    } catch (e) {}
+}
+
+async function populateNotiClassrooms() {
+    try {
+        const res = await fetch('/api/classrooms');
+        const data = await res.json();
+        const sel = document.getElementById('noti-class');
+        sel.innerHTML = '<option value="">ทุกห้อง</option>' + data.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    } catch (e) {}
+}
+
+// Populate parent student dropdown
+async function populateParentStudents() {
+    try {
+        const res = await fetch('/api/admin/students', { headers: { 'x-admin-token': TOKEN } });
+        const data = await res.json();
+        const sel = document.getElementById('parent-student');
+        if (sel) sel.innerHTML = '<option value="">เลือกนักเรียน</option>' + data.map(s => `<option value="${s.id}">${s.student_id||''} — ${s.name}</option>`).join('');
+    } catch (e) {}
+}
+
+// Auto-load parent students list
+setTimeout(populateParentStudents, 1500);

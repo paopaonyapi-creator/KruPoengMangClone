@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <style>
         .admin-body { max-width: 1100px; margin: 40px auto; padding: 0 20px; }
         .admin-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; margin-bottom: 24px; }
@@ -75,6 +76,9 @@
             <button class="tab-btn" onclick="switchTab('classroom',this)">🏫 ห้องเรียน</button>
             <button class="tab-btn" onclick="switchTab('quiz',this)">📝 แบบทดสอบ</button>
             <button class="tab-btn" onclick="switchTab('analytics',this)">📊 สถิติ</button>
+            <button class="tab-btn" onclick="switchTab('goals',this)">🎯 เป้าหมาย</button>
+            <button class="tab-btn" onclick="switchTab('teachers',this)">👨‍🏫 ครู</button>
+            <button class="tab-btn" onclick="switchTab('notify',this)">🔔 แจ้งเตือน</button>
             <button class="tab-btn" onclick="switchTab('settings',this)">⚙️ ตั้งค่า</button>
         </div>
 
@@ -189,7 +193,19 @@
                     <input type="date" class="glass-input" id="att-date" onchange="loadAttendance()">
                 </div>
                 <table class="data-table"><thead><tr><th>ชื่อ</th><th>รหัส</th><th>สถานะ</th><th>เวลา</th></tr></thead><tbody id="table-attendance"></tbody></table>
-                <button class="btn-outline" style="margin-top:12px;" onclick="exportAttendanceCSV()"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+                <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+                    <button class="btn-outline" onclick="exportAttendanceCSV()"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+                    <button class="btn-outline" style="border-color:#10b981;color:#10b981;" onclick="exportExcel('attendance')"><i class="fa-solid fa-file-excel"></i> Excel เช็คชื่อ</button>
+                    <button class="btn-outline" style="border-color:#3b82f6;color:#3b82f6;" onclick="exportExcel('students')"><i class="fa-solid fa-file-excel"></i> Excel นร.</button>
+                    <button class="btn-outline" style="border-color:#f59e0b;color:#f59e0b;" onclick="exportExcel('quiz-results')"><i class="fa-solid fa-file-excel"></i> Excel ผลสอบ</button>
+                </div>
+                
+                <h3 style="margin-top:32px;"><i class="fa-solid fa-key" style="color:#ec4899;"></i> สร้างรหัสผู้ปกครอง</h3>
+                <div class="form-row" style="margin-bottom:12px;">
+                    <select class="glass-input" id="parent-student"></select>
+                    <button class="btn-glow" style="background:#ec4899;" onclick="generateParentCode()"><i class="fa-solid fa-key"></i> สร้างรหัส</button>
+                </div>
+                <div id="parent-code-result" style="display:none;" class="glass-card" style="padding:12px;margin-top:8px;"></div>
             </div>
         </div>
 
@@ -205,6 +221,7 @@
                         <div class="form-group"><label>หัวข้อ</label><input type="text" class="glass-input" id="ai-topic" placeholder="เช่น สมการเชิงเส้น ม.ต้น"></div>
                         <div class="form-group"><label>จำนวนข้อ</label><input type="number" class="glass-input" id="ai-count" value="5" min="1" max="20"></div>
                     </div>
+                    <div class="form-group"><label>ระดับความยาก</label><select class="glass-input" id="ai-difficulty"><option value="ง่าย">ง่าย</option><option value="ปานกลาง" selected>ปานกลาง</option><option value="ยาก">ยาก</option></select></div>
                     <button class="btn-glow btn-full" id="btn-ai-gen" style="background:linear-gradient(135deg,#ec4899,#a855f7);" onclick="generateAIQuiz()">
                         <i class="fa-solid fa-wand-magic-sparkles"></i> สร้างข้อสอบ AI</button>
                 </div>
@@ -232,20 +249,78 @@
         <div id="panel-analytics" class="admin-panel">
             <div class="glass-card" style="margin-bottom:24px;">
                 <h3><i class="fa-solid fa-chart-line" style="color:#10b981;"></i> สถิติภาพรวม</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;">
-                    <div class="glass-card" style="padding:16px;"><p style="color:var(--text-muted);margin-bottom:4px;">นักเรียนทั้งหมด</p><p style="font-size:2rem;font-weight:700;color:#10b981;" id="a-students">-</p></div>
-                    <div class="glass-card" style="padding:16px;"><p style="color:var(--text-muted);margin-bottom:4px;">ทำแบบทดสอบทั้งหมด</p><p style="font-size:2rem;font-weight:700;color:#f59e0b;" id="a-attempts">-</p></div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:16px;">
+                    <div class="glass-card" style="padding:16px;text-align:center;"><p style="font-size:2rem;font-weight:700;color:#10b981;" id="a-students">-</p><p style="color:var(--text-muted);font-size:0.8rem;">นักเรียน</p></div>
+                    <div class="glass-card" style="padding:16px;text-align:center;"><p style="font-size:2rem;font-weight:700;color:#f59e0b;" id="a-attempts">-</p><p style="color:var(--text-muted);font-size:0.8rem;">ทำแบบทดสอบ</p></div>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+                <div class="glass-card" style="padding:16px;">
+                    <h4>📊 เช็คชื่อรายสัปดาห์</h4>
+                    <canvas id="chart-attendance" height="200"></canvas>
+                </div>
+                <div class="glass-card" style="padding:16px;">
+                    <h4>📈 คะแนนเฉลี่ยแบบทดสอบ</h4>
+                    <canvas id="chart-quiz" height="200"></canvas>
                 </div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
                 <div class="glass-card" style="padding:16px;">
-                    <h4>เช็คชื่อรายสัปดาห์</h4>
-                    <canvas id="chart-attendance" height="200"></canvas>
+                    <h4>🏆 EXP Leaderboard</h4>
+                    <canvas id="chart-exp" height="200"></canvas>
                 </div>
                 <div class="glass-card" style="padding:16px;">
-                    <h4>คะแนนเฉลี่ยแบบทดสอบ</h4>
-                    <canvas id="chart-quiz" height="200"></canvas>
+                    <h4>🕐 กิจกรรมล่าสุด</h4>
+                    <div id="recent-activity" style="max-height:250px;overflow-y:auto;"></div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Goals Panel -->
+        <div id="panel-goals" class="admin-panel">
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-bullseye" style="color:#f59e0b;"></i> เป้าหมายห้องเรียน</h3>
+                <div class="form-row" style="margin-bottom:16px;">
+                    <select class="glass-input" id="goal-classroom"></select>
+                    <input type="number" class="glass-input" id="goal-target" placeholder="เป้า % เช่น 70" min="0" max="100">
+                </div>
+                <div class="form-group"><input type="text" class="glass-input" id="goal-desc" placeholder="คำอธิบาย เช่น เป้าหมายปลายภาค"></div>
+                <button class="btn-glow btn-full" style="background:#f59e0b;" onclick="saveGoal()"><i class="fa-solid fa-save"></i> บันทึกเป้าหมาย</button>
+                <div id="goals-list" style="margin-top:24px;"></div>
+            </div>
+        </div>
+
+        <!-- Teachers Panel -->
+        <div id="panel-teachers" class="admin-panel">
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-chalkboard-teacher" style="color:#3b82f6;"></i> จัดการครู</h3>
+                <form id="form-teacher">
+                    <div class="form-row">
+                        <div class="form-group"><label>ชื่อ</label><input type="text" class="glass-input" id="tc-name" required></div>
+                        <div class="form-group"><label>อีเมล</label><input type="email" class="glass-input" id="tc-email" required></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>รหัสผ่าน</label><input type="text" class="glass-input" id="tc-pass" value="1234"></div>
+                        <div class="form-group"><label>บทบาท</label><select class="glass-input" id="tc-role"><option value="teacher">ครู</option><option value="admin">Admin</option></select></div>
+                    </div>
+                    <button type="submit" class="btn-glow btn-full" style="background:#3b82f6;"><i class="fa-solid fa-plus"></i> เพิ่มครู</button>
+                </form>
+                <table class="data-table" style="margin-top:16px;"><thead><tr><th>ID</th><th>ชื่อ</th><th>อีเมล</th><th>บทบาท</th><th></th></tr></thead>
+                <tbody id="table-teachers"></tbody></table>
+            </div>
+        </div>
+
+        <!-- Notifications Panel -->
+        <div id="panel-notify" class="admin-panel">
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-bell" style="color:#ec4899;"></i> ส่งแจ้งเตือน</h3>
+                <div class="form-group"><label>หัวข้อ</label><input type="text" class="glass-input" id="noti-title" placeholder="เช่น ประกาศสำคัญ"></div>
+                <div class="form-group"><label>ข้อความ</label><textarea class="glass-input" id="noti-msg" rows="2" placeholder="รายละเอียด..."></textarea></div>
+                <div class="form-row">
+                    <div class="form-group"><label>ประเภท</label><select class="glass-input" id="noti-type"><option value="system">ทั่วไป</option><option value="quiz">แบบทดสอบ</option><option value="announcement">ประกาศ</option><option value="attendance">เช็คชื่อ</option></select></div>
+                    <div class="form-group"><label>ห้อง (เลือกได้)</label><select class="glass-input" id="noti-class"><option value="">ทุกห้อง</option></select></div>
+                </div>
+                <button class="btn-glow btn-full" style="background:#ec4899;" onclick="sendNotification()"><i class="fa-solid fa-paper-plane"></i> ส่งแจ้งเตือน</button>
             </div>
         </div>
 

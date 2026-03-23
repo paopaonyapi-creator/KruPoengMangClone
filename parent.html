@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kru Pug - พอร์ทัลผู้ปกครอง</title>
+    <link rel="stylesheet" href="index.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .parent-body { max-width:800px; margin:40px auto; padding:0 20px; }
+        .login-card { max-width:400px; margin:80px auto; text-align:center; }
+        .login-card h2 { margin-bottom:8px; }
+        .login-card p { color:var(--text-muted); margin-bottom:24px; font-size:0.9rem; }
+        .report-section { margin-bottom:24px; }
+        .report-section h3 { margin-bottom:12px; color:var(--primary); }
+        .stat-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:12px; margin-bottom:24px; }
+        .stat-box { text-align:center; padding:16px; }
+        .stat-box .num { font-size:2rem; font-weight:700; }
+        .stat-box .lbl { color:var(--text-muted); font-size:0.8rem; }
+        .report-table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+        .report-table th, .report-table td { padding:8px; text-align:left; border-bottom:1px solid var(--glass-border); }
+        .report-table th { color:var(--primary); }
+        .badge-list { display:flex; flex-wrap:wrap; gap:8px; }
+        .badge-item { background:var(--glass-bg); border:1px solid var(--glass-border); padding:6px 12px; border-radius:20px; font-size:0.85rem; }
+        .status-present { color:#10b981; }
+        .status-late { color:#f59e0b; }
+        .status-absent { color:#ef4444; }
+    </style>
+</head>
+<body>
+    <div class="dynamic-bg"><div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div></div>
+
+    <!-- Login Screen -->
+    <div id="parent-login">
+        <div class="login-card glass-card">
+            <div style="font-size:3rem;margin-bottom:16px;">👨‍👩‍👧</div>
+            <h2>พอร์ทัลผู้ปกครอง</h2>
+            <p>ดูผลการเรียนของบุตรหลาน</p>
+            <div class="form-group"><input type="text" class="glass-input" id="p-student-id" placeholder="รหัสนักเรียน"></div>
+            <div class="form-group"><input type="password" class="glass-input" id="p-code" placeholder="รหัสผู้ปกครอง"></div>
+            <button class="btn-glow btn-full" onclick="parentLogin()"><i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ</button>
+            <p id="p-error" style="color:#ef4444;display:none;margin-top:12px;"></p>
+            <a href="index.html" style="color:var(--text-muted);display:block;margin-top:16px;">← กลับหน้าหลัก</a>
+        </div>
+    </div>
+
+    <!-- Report Dashboard -->
+    <div id="parent-dashboard" style="display:none;">
+        <div class="parent-body">
+            <div class="glass-card" style="margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <h2>👨‍👩‍👧 รายงานผลการเรียน</h2>
+                    <p style="color:var(--text-muted);" id="p-info">นักเรียน: - | ผู้ปกครอง: -</p>
+                </div>
+                <button class="btn-outline" style="border-color:#ef4444;color:#ef4444;" onclick="parentLogout()"><i class="fa-solid fa-right-from-bracket"></i> ออก</button>
+            </div>
+
+            <!-- Stats -->
+            <div class="stat-row">
+                <div class="stat-box glass-card"><p class="num" id="rp-exp" style="color:#8b5cf6;">0</p><p class="lbl">EXP</p></div>
+                <div class="stat-box glass-card"><p class="num" id="rp-level" style="color:#f59e0b;">1</p><p class="lbl">Level</p></div>
+                <div class="stat-box glass-card"><p class="num" id="rp-quizzes" style="color:#10b981;">0</p><p class="lbl">ทำข้อสอบ</p></div>
+                <div class="stat-box glass-card"><p class="num" id="rp-attendance" style="color:#3b82f6;">0</p><p class="lbl">วันเข้าเรียน</p></div>
+            </div>
+
+            <!-- Badges -->
+            <div class="report-section glass-card">
+                <h3><i class="fa-solid fa-medal"></i> เหรียญรางวัล</h3>
+                <div class="badge-list" id="rp-badges"><p style="color:var(--text-muted);">ยังไม่มี</p></div>
+            </div>
+
+            <!-- Quiz Results -->
+            <div class="report-section glass-card">
+                <h3><i class="fa-solid fa-pen-ruler"></i> ผลแบบทดสอบ</h3>
+                <table class="report-table"><thead><tr><th>แบบทดสอบ</th><th>คะแนน</th><th>เปอร์เซ็นต์</th><th>วันที่</th></tr></thead>
+                <tbody id="rp-quiz-table"></tbody></table>
+            </div>
+
+            <!-- Attendance -->
+            <div class="report-section glass-card">
+                <h3><i class="fa-solid fa-clipboard-check"></i> ประวัติเช็คชื่อ (30 วัน)</h3>
+                <table class="report-table"><thead><tr><th>วันที่</th><th>สถานะ</th></tr></thead>
+                <tbody id="rp-att-table"></tbody></table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const API = '';
+    let parentToken = localStorage.getItem('parent_token');
+
+    if (parentToken) loadReport();
+
+    async function parentLogin() {
+        const sid = document.getElementById('p-student-id').value.trim();
+        const code = document.getElementById('p-code').value.trim();
+        if (!sid || !code) return;
+        try {
+            const res = await fetch(`${API}/api/parent/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({student_id:sid, parent_code:code}) });
+            const data = await res.json();
+            if (!res.ok) { document.getElementById('p-error').style.display='block'; document.getElementById('p-error').textContent=data.error; return; }
+            parentToken = data.token;
+            localStorage.setItem('parent_token', parentToken);
+            localStorage.setItem('parent_student_name', data.student_name);
+            localStorage.setItem('parent_name', data.parent_name);
+            loadReport();
+        } catch(e) { alert('เกิดข้อผิดพลาด'); }
+    }
+
+    async function loadReport() {
+        document.getElementById('parent-login').style.display='none';
+        document.getElementById('parent-dashboard').style.display='block';
+        try {
+            const res = await fetch(`${API}/api/parent/child-report`, { headers:{'x-parent-token':parentToken} });
+            if (!res.ok) { parentLogout(); return; }
+            const data = await res.json();
+            document.getElementById('p-info').textContent = `นักเรียน: ${data.student.name} | ห้อง: ${data.student.classroom||'-'}`;
+            document.getElementById('rp-exp').textContent = data.stats.exp || 0;
+            document.getElementById('rp-level').textContent = data.stats.level || 1;
+            document.getElementById('rp-quizzes').textContent = data.quizResults.length;
+            document.getElementById('rp-attendance').textContent = data.attendance.filter(a=>a.status==='present').length;
+            // Badges
+            const badges = JSON.parse(data.stats.badges || '[]');
+            document.getElementById('rp-badges').innerHTML = badges.length ? badges.map(b=>`<span class="badge-item">${b}</span>`).join('') : '<p style="color:var(--text-muted);">ยังไม่มี</p>';
+            // Quiz results
+            document.getElementById('rp-quiz-table').innerHTML = data.quizResults.length ?
+                data.quizResults.map(q => `<tr><td>${q.title}</td><td>${q.score}/${q.total}</td><td>${Math.round(q.score/q.total*100)}%</td><td>${new Date(q.submitted_at).toLocaleDateString('th-TH')}</td></tr>`).join('') :
+                '<tr><td colspan="4" style="color:var(--text-muted);">ยังไม่มีผลสอบ</td></tr>';
+            // Attendance
+            document.getElementById('rp-att-table').innerHTML = data.attendance.length ?
+                data.attendance.map(a => `<tr><td>${new Date(a.date).toLocaleDateString('th-TH')}</td><td class="status-${a.status}">${a.status==='present'?'มาเรียน':a.status==='late'?'สาย':'ขาด'}</td></tr>`).join('') :
+                '<tr><td colspan="2" style="color:var(--text-muted);">ยังไม่มีข้อมูล</td></tr>';
+        } catch(e) { console.error(e); }
+    }
+
+    function parentLogout() {
+        localStorage.removeItem('parent_token');
+        parentToken = null;
+        document.getElementById('parent-login').style.display='block';
+        document.getElementById('parent-dashboard').style.display='none';
+    }
+    </script>
+</body>
+</html>

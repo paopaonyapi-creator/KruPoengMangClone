@@ -88,6 +88,7 @@
             <div class="stu-nav">
                 <button class="active" onclick="switchStudentTab('dashboard',this)">🏠 หน้าหลัก</button>
                 <button onclick="switchStudentTab('quiz',this)">📝 แบบทดสอบ</button>
+                <button onclick="switchStudentTab('aitutor',this)">🤖 AI Tutor</button>
                 <button onclick="switchStudentTab('chat',this)">💬 ห้องแชท</button>
                 <button onclick="switchStudentTab('leaderboard',this)">🏆 อันดับ</button>
                 <button onclick="switchStudentTab('history',this)">📊 ประวัติ</button>
@@ -149,6 +150,19 @@
                         <button type="submit" class="btn-glow btn-full"><i class="fa-solid fa-key"></i> เปลี่ยนรหัสผ่าน</button>
                     </form>
                 </div>
+            </div>
+
+            <!-- AI Tutor Panel -->
+            <div id="stu-aitutor" class="stu-panel">
+                <h3 style="margin-bottom:12px;">🤖 ครูพัก AI — ถามคณิตได้เลย!</h3>
+                <div class="chat-box">
+                    <div class="chat-messages" id="ai-messages" style="height:350px;"></div>
+                    <div class="chat-input">
+                        <input id="ai-input" placeholder="ถามคณิตศาสตร์ เช่น วิธีแก้สมการ x+5=12..." onkeydown="if(event.key==='Enter')sendAIChat()">
+                        <button onclick="sendAIChat()" id="ai-send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+                <p style="color:var(--text-muted);font-size:0.75rem;margin-top:8px;">💡 ถาม AI ได้ทุกเรื่องคณิตศาสตร์ — จะอธิบายทีละขั้นตอน</p>
             </div>
         </div>
     </div>
@@ -227,12 +241,17 @@
                 badges.map(b => `<span class="badge">${b}</span>`).join('') :
                 '<span style="color:var(--text-muted);font-size:0.85rem;">ยังไม่มี badge — ทำกิจกรรมเพิ่ม!</span>';
 
-            // Notifications
+            // Notifications (using new Phase 5 API)
             try {
-                const nRes = await fetch('/api/notifications?limit=5');
+                const classId = STUDENT.classroom_id || '';
+                const nRes = await fetch(`/api/student/notifications?classroom_id=${classId}`);
                 const notifs = await nRes.json();
                 document.getElementById('s-notifications').innerHTML = notifs.length === 0 ? '<p style="color:var(--text-muted);">ยังไม่มีแจ้งเตือน</p>' :
-                    notifs.map(n => `<div class="history-card"><div><strong>${n.title}</strong><br><span style="color:var(--text-muted);font-size:0.8rem;">${new Date(n.created_at).toLocaleString('th-TH')}</span></div></div>`).join('');
+                    notifs.slice(0,5).map(n => `<div class="history-card">
+                        <div><span style="margin-right:6px;">${n.type==='quiz'?'📝':n.type==='announcement'?'📢':'🔔'}</span><strong>${n.title}</strong>
+                        ${n.message ? `<br><span style="color:var(--text-muted);font-size:0.8rem;">${n.message}</span>` : ''}
+                        <br><span style="color:var(--text-muted);font-size:0.75rem;">${new Date(n.created_at).toLocaleString('th-TH')}</span></div>
+                    </div>`).join('');
             } catch(e) {}
 
             // History
@@ -319,6 +338,47 @@
         if (data.success) { alert('เปลี่ยนรหัสสำเร็จ!'); e.target.reset(); errEl.style.display = 'none'; }
         else { errEl.textContent = data.error || 'เกิดข้อผิดพลาด'; errEl.style.display = 'block'; }
     }
+    // ========== AI TUTOR ==========
+    let aiHistory = [];
+    async function sendAIChat() {
+        const input = document.getElementById('ai-input');
+        const msg = input.value.trim();
+        if (!msg) return;
+        input.value = '';
+        const btn = document.getElementById('ai-send-btn');
+        btn.disabled = true;
+        // Show user message
+        aiHistory.push({ role: 'user', text: msg });
+        renderAIChat();
+        // Show loading
+        aiHistory.push({ role: 'ai', text: '⏳ กำลังคิด...' });
+        renderAIChat();
+        try {
+            const res = await fetch('/api/student/ai-chat', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: msg, student_name: STUDENT.name })
+            });
+            const data = await res.json();
+            aiHistory[aiHistory.length - 1].text = data.response || data.error || 'ขอโทษ ตอบไม่ได้ตอนนี้';
+        } catch(e) {
+            aiHistory[aiHistory.length - 1].text = '❌ เชื่อมต่อไม่ได้';
+        }
+        renderAIChat();
+        btn.disabled = false;
+    }
+
+    function renderAIChat() {
+        const el = document.getElementById('ai-messages');
+        el.innerHTML = aiHistory.length === 0 ?
+            '<div style="text-align:center;padding:40px;color:var(--text-muted);"><div style="font-size:3rem;margin-bottom:12px;">🤖</div><p>สวัสดี! ฉันคือ <strong>ครูพัก AI</strong><br>ถามอะไรเกี่ยวกับคณิตศาสตร์ได้เลย!</p></div>' :
+            aiHistory.map(m => `<div class="chat-msg">
+                <span class="name ${m.role === 'user' ? 'student' : 'teacher'}">${m.role === 'user' ? '🎓 ' + STUDENT.name : '🤖 ครูพัก AI'}</span>
+                <div class="text" style="white-space:pre-wrap;">${m.text}</div>
+            </div>`).join('');
+        el.scrollTop = el.scrollHeight;
+    }
+    // Init AI chat
+    renderAIChat();
     </script>
 </body>
 </html>

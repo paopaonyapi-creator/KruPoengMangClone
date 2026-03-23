@@ -197,6 +197,45 @@ button { font-family: inherit; cursor: pointer; border: none; outline: none; bor
     .profile-section { flex-direction: column; text-align: center; }
     .nav-links.mobile-open { display: flex; flex-direction: column; position: absolute; top: 100%; left: 0; width: 100%; background: rgba(11,15,25,0.95); padding: 20px; z-index: 200; }
     .ai-chat-panel { width: 90vw; right: 5vw; bottom: 80px; height: 50vh; }
+    /* Admin responsive */
+    .admin-body { padding: 0 12px; margin: 20px auto; }
+    .admin-header { flex-direction: column; gap: 12px; text-align: center; }
+    .admin-header h1 { font-size: 1.3rem; }
+    .form-row { grid-template-columns: 1fr; }
+    .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+    .data-table { font-size: 0.8rem; }
+    .data-table th, .data-table td { padding: 6px 4px; }
+    .tab-btn { font-size: 0.75rem; padding: 6px 10px; margin: 2px; }
+    /* Charts */
+    #panel-analytics > div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
+    /* Student responsive */
+    .student-body { padding: 0 12px; margin: 20px auto; }
+    .stat-row { grid-template-columns: repeat(2, 1fr); }
+    /* Calendar responsive */
+    .calendar-body { padding: 0 12px; }
+    /* Parent/Teacher responsive */
+    .parent-body, .teacher-body { padding: 0 12px; margin: 20px auto; }
+    .login-card { margin: 40px auto; }
+}
+
+@media (max-width: 480px) {
+    .logo span { display: none; }
+    .nav-container { padding: 12px 16px; }
+    .glass-card { padding: 16px; }
+    .hero-section h1 { font-size: 1.4rem; }
+    .dashboard-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .dash-card .dash-num { font-size: 1.5rem; }
+    .btn-glow, .btn-outline { min-height: 44px; font-size: 0.9rem; }
+    .glass-input { min-height: 44px; font-size: 0.95rem; }
+    .admin-header h1 { font-size: 1.1rem; }
+    .tab-btn { font-size: 0.7rem; padding: 5px 8px; }
+    .stat-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+}
+
+/* ===== Touch-friendly ===== */
+@media (hover: none) and (pointer: coarse) {
+    .btn-glow, .btn-outline, .tab-btn, .btn-delete, .btn-edit { min-height: 44px; }
+    .glass-input, select.glass-input { min-height: 44px; }
 }
 
 /* ===== Notification Badge ===== */
@@ -215,3 +254,9 @@ button { font-family: inherit; cursor: pointer; border: none; outline: none; bor
 .ai-bubble { display: inline-block; max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 0.9rem; }
 .ai-msg.user .ai-bubble { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #fff; border-radius: 14px 14px 4px 14px; }
 .ai-msg.ai .ai-bubble { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 14px 14px 14px 4px; }
+
+@media (max-width: 768px) {
+    .notif-panel { width: 90vw; right: 5vw; }
+    .ai-chat-panel { width: 90vw; right: 5vw; height: 50vh; }
+}
+

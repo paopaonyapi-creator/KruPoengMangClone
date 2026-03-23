@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kru Pug - ระบบครู</title>
+    <link rel="stylesheet" href="index.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .teacher-body { max-width:1000px; margin:40px auto; padding:0 20px; }
+        .login-card { max-width:400px; margin:80px auto; text-align:center; }
+        .login-card h2 { margin-bottom:8px; }
+        .login-card p { color:var(--text-muted); margin-bottom:24px; font-size:0.9rem; }
+        .dashboard-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin-bottom:24px; }
+        .dash-card { text-align:center; padding:14px; }
+        .dash-card .dash-num { font-size:2rem; font-weight:700; }
+        .dash-card .dash-label { color:var(--text-muted); font-size:0.8rem; }
+        .data-table { width:100%; border-collapse:collapse; margin-top:12px; font-size:0.9rem; }
+        .data-table th, .data-table td { padding:8px; text-align:left; border-bottom:1px solid var(--glass-border); }
+        .data-table th { color:var(--primary); }
+    </style>
+</head>
+<body>
+    <div class="dynamic-bg"><div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div></div>
+
+    <!-- Login -->
+    <div id="teacher-login">
+        <div class="login-card glass-card">
+            <div style="font-size:3rem;margin-bottom:16px;">👨‍🏫</div>
+            <h2>ระบบครู</h2>
+            <p>เข้าสู่ระบบด้วยอีเมลและรหัสผ่าน</p>
+            <div class="form-group"><input type="email" class="glass-input" id="t-email" placeholder="อีเมล"></div>
+            <div class="form-group"><input type="password" class="glass-input" id="t-pass" placeholder="รหัสผ่าน"></div>
+            <button class="btn-glow btn-full" onclick="teacherLogin()"><i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ</button>
+            <p id="t-error" style="color:#ef4444;display:none;margin-top:12px;"></p>
+            <a href="index.html" style="color:var(--text-muted);display:block;margin-top:16px;">← กลับหน้าหลัก</a>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="teacher-dashboard" style="display:none;">
+        <div class="teacher-body">
+            <div class="glass-card" style="margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                <div>
+                    <h2>👨‍🏫 <span id="t-name">ครู</span></h2>
+                    <p style="color:var(--text-muted);">ระบบจัดการห้องเรียน</p>
+                </div>
+                <div>
+                    <a href="index.html" class="btn-outline" style="text-decoration:none;"><i class="fa-solid fa-arrow-left"></i> หน้าเว็บ</a>
+                    <button class="btn-outline" style="border-color:#ef4444;color:#ef4444;margin-left:8px;" onclick="teacherLogout()"><i class="fa-solid fa-right-from-bracket"></i> ออก</button>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="dash-card glass-card"><p class="dash-num" id="td-classrooms" style="color:#8b5cf6;">0</p><p class="dash-label">ห้องเรียน</p></div>
+                <div class="dash-card glass-card"><p class="dash-num" id="td-students" style="color:#10b981;">0</p><p class="dash-label">นักเรียน</p></div>
+                <div class="dash-card glass-card"><p class="dash-num" id="td-attendance" style="color:#f59e0b;">0</p><p class="dash-label">เช็คชื่อวันนี้</p></div>
+            </div>
+
+            <!-- Classrooms -->
+            <div class="glass-card" style="margin-bottom:24px;">
+                <h3><i class="fa-solid fa-school" style="color:#8b5cf6;"></i> ห้องเรียนของฉัน</h3>
+                <div id="t-classrooms-list"></div>
+            </div>
+
+            <!-- Students -->
+            <div class="glass-card" style="margin-bottom:24px;">
+                <h3><i class="fa-solid fa-users" style="color:#10b981;"></i> นักเรียน</h3>
+                <table class="data-table"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>ห้อง</th></tr></thead>
+                <tbody id="t-students-table"></tbody></table>
+            </div>
+
+            <!-- Today Attendance -->
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-clipboard-check" style="color:#f59e0b;"></i> เช็คชื่อวันนี้</h3>
+                <table class="data-table"><thead><tr><th>ชื่อ</th><th>สถานะ</th></tr></thead>
+                <tbody id="t-att-table"></tbody></table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const API = '';
+    let teacherToken = localStorage.getItem('teacher_token');
+
+    if (teacherToken) loadDashboard();
+
+    async function teacherLogin() {
+        const email = document.getElementById('t-email').value.trim();
+        const pass = document.getElementById('t-pass').value.trim();
+        if (!email || !pass) return;
+        try {
+            const res = await fetch(`${API}/api/teacher/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email, password:pass}) });
+            const data = await res.json();
+            if (!res.ok) { document.getElementById('t-error').style.display='block'; document.getElementById('t-error').textContent=data.error; return; }
+            teacherToken = data.token;
+            localStorage.setItem('teacher_token', teacherToken);
+            localStorage.setItem('teacher_name', data.teacher.name);
+            loadDashboard();
+        } catch(e) { alert('เกิดข้อผิดพลาด'); }
+    }
+
+    async function loadDashboard() {
+        document.getElementById('teacher-login').style.display='none';
+        document.getElementById('teacher-dashboard').style.display='block';
+        document.getElementById('t-name').textContent = localStorage.getItem('teacher_name') || 'ครู';
+        try {
+            const res = await fetch(`${API}/api/teacher/dashboard`, { headers:{'x-teacher-token':teacherToken} });
+            if (!res.ok) { teacherLogout(); return; }
+            const data = await res.json();
+            document.getElementById('td-classrooms').textContent = data.classrooms.length;
+            document.getElementById('td-students').textContent = data.students.length;
+            document.getElementById('td-attendance').textContent = data.attendance.length;
+            // Classrooms
+            document.getElementById('t-classrooms-list').innerHTML = data.classrooms.length ?
+                data.classrooms.map(c => `<div class="glass-card" style="margin:8px 0;padding:12px;"><strong>${c.name}</strong></div>`).join('') :
+                '<p style="color:var(--text-muted);">ยังไม่มีห้องเรียน — ติดต่อ Admin</p>';
+            // Students
+            document.getElementById('t-students-table').innerHTML = data.students.length ?
+                data.students.map(s => `<tr><td>${s.student_id||'-'}</td><td>${s.name}</td><td>${s.classroom||'-'}</td></tr>`).join('') :
+                '<tr><td colspan="3" style="color:var(--text-muted);">ยังไม่มีนักเรียน</td></tr>';
+            // Attendance
+            document.getElementById('t-att-table').innerHTML = data.attendance.length ?
+                data.attendance.map(a => `<tr><td>${a.student_name}</td><td style="color:${a.status==='present'?'#10b981':a.status==='late'?'#f59e0b':'#ef4444'}">${a.status==='present'?'มาเรียน':a.status==='late'?'สาย':'ขาด'}</td></tr>`).join('') :
+                '<tr><td colspan="2" style="color:var(--text-muted);">ยังไม่มีข้อมูลวันนี้</td></tr>';
+        } catch(e) { console.error(e); }
+    }
+
+    function teacherLogout() {
+        localStorage.removeItem('teacher_token');
+        teacherToken = null;
+        document.getElementById('teacher-login').style.display='block';
+        document.getElementById('teacher-dashboard').style.display='none';
+    }
+    </script>
+</body>
+</html>

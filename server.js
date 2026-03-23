@@ -44,6 +44,8 @@ const pool = mysql.createPool({
 
 // Session tokens
 const activeTokens = new Set();
+const parentTokens = new Map();
+const teacherTokens = new Map();
 
 // Auth middleware
 function requireAuth(req, res, next) {
@@ -833,6 +835,333 @@ app.get('/api/gamification/top', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ===================== PHASE 5: ANALYTICS =====================
+
+app.get('/api/admin/analytics', requireAuth, async (req, res) => {
+    try {
+        // Student count
+        const [[{ total_students }]] = await pool.query('SELECT COUNT(*) as total_students FROM students');
+        // Quiz attempts
+        const [[{ total_attempts }]] = await pool.query('SELECT COUNT(*) as total_attempts FROM quiz_results');
+        // Attendance this week (7 days)
+        const [weeklyAtt] = await pool.query(`
+            SELECT DATE(date) as d, 
+                   SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) as present_count,
+                   SUM(CASE WHEN status='late' THEN 1 ELSE 0 END) as late_count,
+                   SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) as absent_count,
+                   COUNT(*) as total
+            FROM attendance WHERE date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+            GROUP BY DATE(date) ORDER BY d`);
+        // Quiz averages (last 10 quizzes)
+        const [quizAvg] = await pool.query(`
+            SELECT q.title, ROUND(AVG(qr.score/qr.total*100),1) as avg_score, COUNT(qr.id) as attempts
+            FROM quiz_results qr JOIN quizzes q ON qr.quiz_id=q.id
+            GROUP BY qr.quiz_id ORDER BY q.id DESC LIMIT 10`);
+        // EXP distribution
+        const [expDist] = await pool.query(`
+            SELECT s.name, ss.exp, ss.level FROM student_stats ss
+            JOIN students s ON ss.student_id=s.id ORDER BY ss.exp DESC LIMIT 10`);
+        // Recent activity
+        const [recentAct] = await pool.query(`
+            (SELECT 'quiz' as type, CONCAT(student_name,' ทำแบบทดสอบ') as text, submitted_at as ts FROM quiz_results ORDER BY submitted_at DESC LIMIT 5)
+            UNION ALL
+            (SELECT 'attendance' as type, CONCAT(s.name,' เช็คชื่อ') as text, a.created_at as ts FROM attendance a JOIN students s ON a.student_id=s.id ORDER BY a.created_at DESC LIMIT 5)
+            ORDER BY ts DESC LIMIT 10`);
+        // Classroom stats
+        const [classStats] = await pool.query(`
+            SELECT c.id, c.name, COUNT(s.id) as student_count,
+                   (SELECT COUNT(*) FROM attendance a WHERE a.classroom_id=c.id AND a.date=CURDATE()) as today_attendance
+            FROM classrooms c LEFT JOIN students s ON s.classroom_id=c.id GROUP BY c.id`);
+        res.json({ total_students, total_attempts, weeklyAtt, quizAvg, expDist, recentAct, classStats });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ===================== PHASE 5: NOTIFICATIONS =====================
+
+app.post('/api/admin/notify', requireAuth, async (req, res) => {
+    try {
+        const { title, message, type, classroom_id } = req.body;
+        if (!title) return res.status(400).json({ error: 'Title required' });
+        const [result] = await pool.query(
+            'INSERT INTO notifications (title, message, type, target_classroom_id) VALUES (?,?,?,?)',
+            [title, message || '', type || 'system', classroom_id || null]);
+        res.json({ success: true, id: result.insertId });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/student/notifications', async (req, res) => {
+    try {
+        const classroomId = req.query.classroom_id;
+        let query = `SELECT * FROM notifications WHERE (target_classroom_id IS NULL`;
+        let params = [];
+        if (classroomId) { query += ` OR target_classroom_id=?`; params.push(classroomId); }
+        query += `) ORDER BY created_at DESC LIMIT 30`;
+        const [rows] = await pool.query(query, params);
+        res.json(rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.put('/api/student/notifications/:id/read', async (req, res) => {
+    try {
+        await pool.query('UPDATE notifications SET is_read=TRUE WHERE id=?', [req.params.id]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/notifications/unread-count', async (req, res) => {
+    try {
+        const classroomId = req.query.classroom_id;
+        let query = `SELECT COUNT(*) as cnt FROM notifications WHERE is_read=FALSE AND (target_classroom_id IS NULL`;
+        let params = [];
+        if (classroomId) { query += ` OR target_classroom_id=?`; params.push(classroomId); }
+        query += `)`;
+        const [[{ cnt }]] = await pool.query(query, params);
+        res.json({ count: cnt });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ===================== PHASE 5: AI TUTOR (Student) =====================
+
+app.post('/api/student/ai-chat', async (req, res) => {
+    try {
+        const { message, student_name } = req.body;
+        if (!message?.trim()) return res.status(400).json({ error: 'Empty message' });
+        if (!OPENROUTER_API_KEY) return res.status(400).json({ error: 'ไม่มี API Key — แจ้ง Admin' });
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${OPENROUTER_API_KEY}`, 'Content-Type': 'application/json', 'HTTP-Referer': 'https://krupug.app', 'X-Title': 'Kru Pug AI Tutor' },
+            body: JSON.stringify({
+                model: 'google/gemini-2.0-flash-001',
+                messages: [
+                    { role: 'system', content: 'คุณคือ AI ครูสอนคณิตศาสตร์ชื่อ "ครูพัก AI" ช่วยนักเรียนเรียนคณิตศาสตร์ ตอบเป็นภาษาไทย อธิบายทีละขั้นตอน ใช้ตัวอย่างง่ายๆ ถ้าต้องใส่สูตรให้ใช้ตัวอักษรปกติ ไม่ใช้ LaTeX' },
+                    { role: 'user', content: message }
+                ],
+                max_tokens: 1000
+            })
+        });
+        const data = await response.json();
+        const aiResponse = data.choices?.[0]?.message?.content || 'ขอโทษครับ ตอบไม่ได้ตอนนี้';
+        // Save to DB
+        await pool.query('INSERT INTO ai_chats (user_name, message, response) VALUES (?,?,?)',
+            [student_name || 'Student', message, aiResponse]);
+        res.json({ response: aiResponse });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ===================== PHASE 5: AUTO-QUIZ GENERATOR =====================
+
+app.post('/api/admin/generate-quiz', requireAuth, async (req, res) => {
+    try {
+        const { topic, count, difficulty } = req.body;
+        if (!topic) return res.status(400).json({ error: 'Topic required' });
+        if (!OPENROUTER_API_KEY) return res.status(400).json({ error: 'ไม่มี API Key' });
+        const numQ = Math.min(count || 5, 20);
+        const diff = difficulty || 'ปานกลาง';
+        const prompt = `สร้างแบบทดสอบคณิตศาสตร์ หัวข้อ "${topic}" จำนวน ${numQ} ข้อ ระดับความยาก: ${diff}
+ตอบเป็น JSON array เท่านั้น ห้ามใส่ markdown หรือข้อความอื่น:
+[{"question":"...","options":["ก.xxx","ข.xxx","ค.xxx","ง.xxx"],"correct_answer":0,"explanation":"..."}]
+correct_answer คือ index (0-3) ของตัวเลือกที่ถูกต้อง`;
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${OPENROUTER_API_KEY}`, 'Content-Type': 'application/json', 'HTTP-Referer': 'https://krupug.app', 'X-Title': 'Kru Pug Quiz Gen' },
+            body: JSON.stringify({
+                model: 'google/gemini-2.0-flash-001',
+                messages: [{ role: 'user', content: prompt }],
+                max_tokens: 3000
+            })
+        });
+        const data = await response.json();
+        let text = data.choices?.[0]?.message?.content || '';
+        // Extract JSON from response
+        const jsonMatch = text.match(/\[[\s\S]*\]/);
+        if (!jsonMatch) return res.status(500).json({ error: 'AI ไม่ส่ง JSON กลับมา', raw: text });
+        const questions = JSON.parse(jsonMatch[0]);
+        // Create quiz
+        const title = `AI: ${topic} (${diff})`;
+        const [quizResult] = await pool.query('INSERT INTO quizzes (title, description, time_limit) VALUES (?,?,?)',
+            [title, `สร้างโดย AI — หัวข้อ: ${topic}`, 30]);
+        const quizId = quizResult.insertId;
+        for (const q of questions) {
+            await pool.query('INSERT INTO quiz_questions (quiz_id, question, options, correct_answer) VALUES (?,?,?,?)',
+                [quizId, q.question, JSON.stringify(q.options), q.correct_answer || 0]);
+        }
+        // Auto-notify students
+        await pool.query('INSERT INTO notifications (title, message, type) VALUES (?,?,?)',
+            [`แบบทดสอบใหม่: ${title}`, `มีแบบทดสอบใหม่! ${numQ} ข้อ`, 'quiz']);
+        res.json({ success: true, quiz_id: quizId, questions: questions.length });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ===================== PHASE 5: EXCEL EXPORT =====================
+
+app.get('/api/admin/export/students', requireAuth, async (req, res) => {
+    try {
+        const [rows] = await pool.query(`
+            SELECT s.student_id as รหัส, s.name as ชื่อ, c.name as ห้องเรียน, 
+                   IFNULL(ss.exp,0) as EXP, IFNULL(ss.level,1) as Level
+            FROM students s LEFT JOIN classrooms c ON s.classroom_id=c.id
+            LEFT JOIN student_stats ss ON ss.student_id=s.id ORDER BY c.name, s.student_id`);
+        res.json(rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/admin/export/attendance', requireAuth, async (req, res) => {
+    try {
+        const { classroom_id, date_from, date_to } = req.query;
+        let query = `SELECT s.student_id as รหัส, s.name as ชื่อ, c.name as ห้องเรียน,
+                     a.date as วันที่, a.status as สถานะ
+                     FROM attendance a JOIN students s ON a.student_id=s.id
+                     LEFT JOIN classrooms c ON a.classroom_id=c.id WHERE 1=1`;
+        let params = [];
+        if (classroom_id) { query += ' AND a.classroom_id=?'; params.push(classroom_id); }
+        if (date_from) { query += ' AND a.date>=?'; params.push(date_from); }
+        if (date_to) { query += ' AND a.date<=?'; params.push(date_to); }
+        query += ' ORDER BY a.date DESC, c.name, s.student_id';
+        const [rows] = await pool.query(query, params);
+        res.json(rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/admin/export/quiz-results', requireAuth, async (req, res) => {
+    try {
+        const [rows] = await pool.query(`
+            SELECT q.title as แบบทดสอบ, qr.student_name as ชื่อ, qr.score as คะแนน,
+                   qr.total as เต็ม, ROUND(qr.score/qr.total*100,1) as เปอร์เซ็นต์,
+                   qr.submitted_at as วันที่
+            FROM quiz_results qr JOIN quizzes q ON qr.quiz_id=q.id 
+            ORDER BY qr.submitted_at DESC`);
+        res.json(rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ===================== PHASE 5: CLASS GOALS =====================
+
+app.get('/api/admin/goals', requireAuth, async (req, res) => {
+    try {
+        const [goals] = await pool.query(`
+            SELECT cg.*, c.name as classroom_name,
+                   (SELECT ROUND(AVG(qr.score/qr.total*100),1) FROM quiz_results qr 
+                    JOIN students s ON qr.student_name=s.name WHERE s.classroom_id=cg.classroom_id) as current_avg
+            FROM classroom_goals cg JOIN classrooms c ON cg.classroom_id=c.id`);
+        res.json(goals);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/admin/goals', requireAuth, async (req, res) => {
+    try {
+        const { classroom_id, target_avg, description } = req.body;
+        if (!classroom_id || !target_avg) return res.status(400).json({ error: 'Missing fields' });
+        // Upsert goal
+        await pool.query(`INSERT INTO classroom_goals (classroom_id, target_avg, description) VALUES (?,?,?)
+            ON DUPLICATE KEY UPDATE target_avg=VALUES(target_avg), description=VALUES(description)`,
+            [classroom_id, target_avg, description || '']);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ===================== PHASE 5: PARENT PORTAL =====================
+
+app.post('/api/parent/login', async (req, res) => {
+    try {
+        const { student_id, parent_code } = req.body;
+        if (!student_id || !parent_code) return res.status(400).json({ error: 'กรุณากรอกข้อมูล' });
+        const [[access]] = await pool.query(
+            `SELECT pa.*, s.name as student_name, s.id as sid, s.classroom_id 
+             FROM parent_access pa JOIN students s ON pa.student_id=s.id 
+             WHERE s.student_id=? AND pa.parent_code=?`, [student_id, parent_code]);
+        if (!access) return res.status(401).json({ error: 'รหัสไม่ถูกต้อง' });
+        const token = crypto.randomBytes(32).toString('hex');
+        parentTokens.set(token, { studentId: access.sid, parentName: access.parent_name, classroomId: access.classroom_id });
+        res.json({ success: true, token, student_name: access.student_name, parent_name: access.parent_name });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/parent/child-report', async (req, res) => {
+    try {
+        const token = req.headers['x-parent-token'];
+        if (!token || !parentTokens.has(token)) return res.status(401).json({ error: 'Unauthorized' });
+        const { studentId } = parentTokens.get(token);
+        // Get student info
+        const [[student]] = await pool.query('SELECT s.*, c.name as classroom FROM students s LEFT JOIN classrooms c ON s.classroom_id=c.id WHERE s.id=?', [studentId]);
+        // Quiz results
+        const [quizResults] = await pool.query('SELECT qr.*, q.title FROM quiz_results qr JOIN quizzes q ON qr.quiz_id=q.id WHERE qr.student_name=? ORDER BY qr.submitted_at DESC', [student.name]);
+        // Attendance (last 30 days)
+        const [attendance] = await pool.query('SELECT * FROM attendance WHERE student_id=? AND date>=DATE_SUB(CURDATE(), INTERVAL 30 DAY) ORDER BY date DESC', [studentId]);
+        // Stats
+        const [[stats]] = await pool.query('SELECT * FROM student_stats WHERE student_id=?', [studentId]);
+        res.json({ student, quizResults, attendance, stats: stats || { exp: 0, level: 1, badges: '[]' } });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/admin/parent-code', requireAuth, async (req, res) => {
+    try {
+        const { student_id, parent_name } = req.body;
+        const code = Math.random().toString(36).substr(2, 8).toUpperCase();
+        await pool.query('INSERT INTO parent_access (student_id, parent_code, parent_name) VALUES (?,?,?) ON DUPLICATE KEY UPDATE parent_code=VALUES(parent_code), parent_name=VALUES(parent_name)',
+            [student_id, code, parent_name || 'ผู้ปกครอง']);
+        res.json({ success: true, code });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ===================== PHASE 5: MULTI-TEACHER =====================
+
+app.post('/api/teacher/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) return res.status(400).json({ error: 'กรุณากรอกข้อมูล' });
+        const [[teacher]] = await pool.query('SELECT * FROM teachers WHERE email=?', [email]);
+        if (!teacher || teacher.password !== password) return res.status(401).json({ error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
+        const token = crypto.randomBytes(32).toString('hex');
+        teacherTokens.set(token, { id: teacher.id, name: teacher.name, email: teacher.email, role: teacher.role });
+        res.json({ success: true, token, teacher: { id: teacher.id, name: teacher.name, role: teacher.role } });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+function requireTeacherAuth(req, res, next) {
+    const token = req.headers['x-teacher-token'];
+    if (!token || !teacherTokens.has(token)) return res.status(401).json({ error: 'Unauthorized' });
+    req.teacher = teacherTokens.get(token);
+    next();
+}
+
+app.get('/api/teacher/dashboard', requireTeacherAuth, async (req, res) => {
+    try {
+        const [classrooms] = await pool.query('SELECT * FROM classrooms WHERE teacher_id=?', [req.teacher.id]);
+        const classIds = classrooms.map(c => c.id);
+        let students = [], attendance = [], quizzes = [];
+        if (classIds.length > 0) {
+            [students] = await pool.query('SELECT s.*, c.name as classroom FROM students s JOIN classrooms c ON s.classroom_id=c.id WHERE s.classroom_id IN (?)', [classIds]);
+            [attendance] = await pool.query('SELECT a.*, s.name as student_name FROM attendance a JOIN students s ON a.student_id=s.id WHERE a.classroom_id IN (?) AND a.date=CURDATE()', [classIds]);
+        }
+        [quizzes] = await pool.query('SELECT * FROM quizzes ORDER BY created_at DESC LIMIT 10');
+        res.json({ classrooms, students, attendance, quizzes });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/admin/teachers', requireAuth, async (req, res) => {
+    try {
+        const { name, email, password, role } = req.body;
+        if (!name || !email) return res.status(400).json({ error: 'Missing fields' });
+        const [result] = await pool.query('INSERT INTO teachers (name, email, password, role) VALUES (?,?,?,?)',
+            [name, email, password || '1234', role || 'teacher']);
+        res.json({ success: true, id: result.insertId });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/admin/teachers', requireAuth, async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT id, name, email, role, created_at FROM teachers');
+        res.json(rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/admin/teachers/:id', requireAuth, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM teachers WHERE id=?', [req.params.id]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // Fallback to index.html for SPA
 app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
@@ -846,17 +1175,25 @@ async function autoMigrate() {
         await conn.query(`CREATE TABLE IF NOT EXISTS wfh_logs (id INT AUTO_INCREMENT PRIMARY KEY, log_date DATE, morning_task TEXT, afternoon_task TEXT, note TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         await conn.query(`CREATE TABLE IF NOT EXISTS announcements (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), content TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         await conn.query(`CREATE TABLE IF NOT EXISTS admin_settings (id INT AUTO_INCREMENT PRIMARY KEY, setting_key VARCHAR(100) UNIQUE, setting_value TEXT)`);
-        await conn.query(`CREATE TABLE IF NOT EXISTS classrooms (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), description TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS classrooms (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), description TEXT, teacher_id INT DEFAULT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         await conn.query(`CREATE TABLE IF NOT EXISTS students (id INT AUTO_INCREMENT PRIMARY KEY, student_id VARCHAR(50) UNIQUE, name VARCHAR(255), classroom_id INT, password VARCHAR(255) DEFAULT '1234', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (classroom_id) REFERENCES classrooms(id) ON DELETE SET NULL)`);
         await conn.query(`CREATE TABLE IF NOT EXISTS attendance (id INT AUTO_INCREMENT PRIMARY KEY, student_id INT, classroom_id INT, date DATE, status ENUM('present','absent','late') DEFAULT 'present', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         await conn.query(`CREATE TABLE IF NOT EXISTS quizzes (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), description TEXT, time_limit INT DEFAULT 30, is_active BOOLEAN DEFAULT TRUE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         await conn.query(`CREATE TABLE IF NOT EXISTS quiz_questions (id INT AUTO_INCREMENT PRIMARY KEY, quiz_id INT, question TEXT, options JSON, correct_answer INT DEFAULT 0, FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE)`);
         await conn.query(`CREATE TABLE IF NOT EXISTS quiz_results (id INT AUTO_INCREMENT PRIMARY KEY, quiz_id INT NOT NULL, student_name VARCHAR(255), score INT DEFAULT 0, total INT DEFAULT 0, answers JSON, submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE)`);
-        await conn.query(`CREATE TABLE IF NOT EXISTS notifications (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255) NOT NULL, message TEXT, type ENUM('quiz','announcement','attendance','system') DEFAULT 'system', is_read BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS notifications (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255) NOT NULL, message TEXT, type ENUM('quiz','announcement','attendance','system') DEFAULT 'system', is_read BOOLEAN DEFAULT FALSE, target_classroom_id INT DEFAULT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         await conn.query(`CREATE TABLE IF NOT EXISTS ai_chats (id INT AUTO_INCREMENT PRIMARY KEY, user_name VARCHAR(255), message TEXT, response TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
-        await conn.query(`CREATE TABLE IF NOT EXISTS schedule_events (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255) NOT NULL, event_date DATE, time_start VARCHAR(10), time_end VARCHAR(10), type ENUM('class','exam','event','holiday') DEFAULT 'class', description TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS schedule_events (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255) NOT NULL, event_date DATE, time_start VARCHAR(10), time_end VARCHAR(10), type ENUM('class','exam','event','holiday') DEFAULT 'class', description TEXT, meeting_url TEXT DEFAULT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         await conn.query(`CREATE TABLE IF NOT EXISTS chat_messages (id INT AUTO_INCREMENT PRIMARY KEY, room VARCHAR(100) DEFAULT 'general', user_name VARCHAR(255), user_role ENUM('student','teacher') DEFAULT 'student', message TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         await conn.query(`CREATE TABLE IF NOT EXISTS student_stats (id INT AUTO_INCREMENT PRIMARY KEY, student_id INT NOT NULL, exp INT DEFAULT 0, level INT DEFAULT 1, badges JSON, streak_days INT DEFAULT 0, last_activity DATE, FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE)`);
+        // Phase 5 tables
+        await conn.query(`CREATE TABLE IF NOT EXISTS classroom_goals (id INT AUTO_INCREMENT PRIMARY KEY, classroom_id INT UNIQUE, target_avg DECIMAL(5,2) DEFAULT 70, description TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS parent_access (id INT AUTO_INCREMENT PRIMARY KEY, student_id INT UNIQUE, parent_code VARCHAR(20), parent_name VARCHAR(255) DEFAULT 'ผู้ปกครอง', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS teachers (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), email VARCHAR(255) UNIQUE, password VARCHAR(255) DEFAULT '1234', role ENUM('teacher','admin') DEFAULT 'teacher', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        // Alter tables for new columns (safe to run multiple times)
+        try { await conn.query('ALTER TABLE notifications ADD COLUMN target_classroom_id INT DEFAULT NULL'); } catch(e) {}
+        try { await conn.query('ALTER TABLE classrooms ADD COLUMN teacher_id INT DEFAULT NULL'); } catch(e) {}
+        try { await conn.query('ALTER TABLE schedule_events ADD COLUMN meeting_url TEXT DEFAULT NULL'); } catch(e) {}
         console.log('Auto-migration complete!');
     } catch(e) { console.error('Migration error:', e.message); }
 }
