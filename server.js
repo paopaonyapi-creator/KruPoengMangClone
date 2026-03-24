@@ -1583,6 +1583,16 @@ app.get('/api/admin/line-notify/status', requireAuth, async (req, res) => {
     });
 });
 
+// LINE Webhook (receives events from LINE)
+app.post('/webhook/line', (req, res) => {
+    const events = req.body.events || [];
+    // Log events for debugging
+    events.forEach(event => {
+        console.log('[LINE]', event.type, event.source?.userId || '');
+    });
+    res.status(200).json({ status: 'ok' });
+});
+
 // ===================== QR CODE CHECK-IN =====================
 
 // Generate QR code for a classroom
