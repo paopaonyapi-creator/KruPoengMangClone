@@ -938,3 +938,71 @@ async function generateQRCheckin() {
 
 // Load LINE status on page load
 if (typeof loadLineStatus === 'function') setTimeout(loadLineStatus, 500);
+
+// ===================== ATTENDANCE REPORT =====================
+
+async function loadAttendanceReport() {
+    const TOKEN = localStorage.getItem('admin_token');
+    try {
+        // Load stats
+        const statsRes = await fetch('/api/admin/attendance/stats', { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+        const stats = await statsRes.json();
+        if (stats.success) {
+            document.getElementById('att-today').textContent = stats.today;
+            document.getElementById('att-week').textContent = stats.week;
+            document.getElementById('att-total').textContent = stats.total_students;
+            document.getElementById('att-rate').textContent = stats.rate + '%';
+        }
+        // Load report
+        const reportRes = await fetch('/api/admin/attendance/report', { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+        const report = await reportRes.json();
+        if (report.success && report.data.length) {
+            const tbody = document.getElementById('attendance-body');
+            tbody.innerHTML = report.data.map(r => `<tr style="border-bottom:1px solid var(--glass-border);">
+                <td style="padding:8px;">${r.student_name}</td>
+                <td style="padding:8px;text-align:center;">ม.${r.classroom_id}/1</td>
+                <td style="padding:8px;text-align:center;">${r.check_date}</td>
+                <td style="padding:8px;text-align:center;">${r.check_time}</td>
+            </tr>`).join('');
+            document.getElementById('attendance-table').style.display = 'block';
+        }
+    } catch(e) { console.error(e); }
+}
+
+// ===================== BROADCAST ALL =====================
+
+async function broadcastAll() {
+    const msg = document.getElementById('broadcast-msg').value.trim();
+    if (!msg) return alert('กรุณาใส่ข้อความ');
+    const TOKEN = localStorage.getItem('admin_token');
+    const result = document.getElementById('broadcast-result');
+    try {
+        const res = await fetch('/api/admin/notify-broadcast', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN },
+            body: JSON.stringify({ message: msg })
+        });
+        const data = await res.json();
+        result.style.display = 'block';
+        result.style.background = data.success ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)';
+        result.textContent = data.success ? '✅ ส่ง Broadcast สำเร็จ (LINE + Telegram)' : '❌ ' + (data.error || 'เกิดข้อผิดพลาด');
+        if (data.success) document.getElementById('broadcast-msg').value = '';
+    } catch(e) { result.style.display='block'; result.style.background='rgba(239,68,68,0.2)'; result.textContent='❌ '+e.message; }
+}
+
+// ===================== LINE RICH MENU =====================
+
+async function createRichMenu() {
+    const TOKEN = localStorage.getItem('admin_token');
+    const result = document.getElementById('richmenu-result');
+    try {
+        const res = await fetch('/api/admin/line-richmenu', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN }
+        });
+        const data = await res.json();
+        result.style.display = 'block';
+        result.style.background = data.success ? 'rgba(6,199,85,0.2)' : 'rgba(239,68,68,0.2)';
+        result.textContent = data.success ? '✅ ' + data.message : '❌ ' + (data.error || 'เกิดข้อผิดพลาด');
+    } catch(e) { result.style.display='block'; result.style.background='rgba(239,68,68,0.2)'; result.textContent='❌ '+e.message; }
+}

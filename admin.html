@@ -453,6 +453,58 @@
                     <p id="qr-url" style="color:var(--text-muted);font-size:0.8rem;word-break:break-all;margin-top:8px;"></p>
                 </div>
             </div>
+
+            <!-- Attendance Report -->
+            <div class="glass-card" style="margin-top:24px;max-width:800px;">
+                <h3><i class="fa-solid fa-clipboard-user" style="color:#10b981;"></i> รายงานเช็คชื่อ</h3>
+                <div id="attendance-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+                    <div style="background:rgba(16,185,129,0.15);padding:12px;border-radius:10px;text-align:center;">
+                        <div id="att-today" style="font-size:1.5rem;font-weight:700;color:#10b981;">-</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">วันนี้</div>
+                    </div>
+                    <div style="background:rgba(59,130,246,0.15);padding:12px;border-radius:10px;text-align:center;">
+                        <div id="att-week" style="font-size:1.5rem;font-weight:700;color:#3b82f6;">-</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">สัปดาห์นี้</div>
+                    </div>
+                    <div style="background:rgba(168,85,247,0.15);padding:12px;border-radius:10px;text-align:center;">
+                        <div id="att-total" style="font-size:1.5rem;font-weight:700;color:#a855f7;">-</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">นักเรียนทั้งหมด</div>
+                    </div>
+                    <div style="background:rgba(245,158,11,0.15);padding:12px;border-radius:10px;text-align:center;">
+                        <div id="att-rate" style="font-size:1.5rem;font-weight:700;color:#f59e0b;">-</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">อัตราการเข้าเรียน</div>
+                    </div>
+                </div>
+                <button class="btn-glow btn-full" style="background:#10b981;" onclick="loadAttendanceReport()"><i class="fa-solid fa-sync"></i> โหลดรายงาน</button>
+                <div id="attendance-table" style="display:none;margin-top:16px;overflow-x:auto;">
+                    <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+                        <thead><tr style="border-bottom:2px solid var(--glass-border);">
+                            <th style="padding:8px;text-align:left;">ชื่อ</th>
+                            <th style="padding:8px;text-align:center;">ห้อง</th>
+                            <th style="padding:8px;text-align:center;">วันที่</th>
+                            <th style="padding:8px;text-align:center;">เวลา</th>
+                        </tr></thead>
+                        <tbody id="attendance-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Broadcast All Channels -->
+            <div class="glass-card" style="margin-top:24px;max-width:600px;">
+                <h3><i class="fa-solid fa-bullhorn" style="color:#ef4444;"></i> Broadcast ทุกช่องทาง</h3>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">ส่งข้อความพร้อมกันทั้ง LINE + Telegram ในครั้งเดียว</p>
+                <div class="form-group"><textarea class="glass-input" id="broadcast-msg" rows="3" placeholder="พิมพ์ข้อความ Broadcast..."></textarea></div>
+                <button class="btn-glow btn-full" style="background:linear-gradient(135deg,#06c755,#3b82f6);" onclick="broadcastAll()"><i class="fa-solid fa-paper-plane"></i> ส่ง Broadcast ทุกช่องทาง</button>
+                <div id="broadcast-result" style="display:none;padding:12px;border-radius:8px;font-size:0.9rem;margin-top:12px;"></div>
+            </div>
+
+            <!-- LINE Rich Menu -->
+            <div class="glass-card" style="margin-top:24px;max-width:600px;">
+                <h3><i class="fa-solid fa-bars" style="color:#06c755;"></i> LINE Rich Menu</h3>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">สร้างเมนูด้านล่าง LINE (คะแนน, ตารางสอน, เช็คชื่อ, เว็บ)</p>
+                <button class="btn-glow btn-full" style="background:#06c755;" onclick="createRichMenu()"><i class="fa-solid fa-plus"></i> สร้าง Rich Menu</button>
+                <div id="richmenu-result" style="display:none;padding:12px;border-radius:8px;font-size:0.9rem;margin-top:12px;"></div>
+            </div>
         </div>
     </div>
 

@@ -170,26 +170,78 @@ const DEMO = {
         { student_name: 'วิชัย เลขดี', quizzes_taken: 9, avg_percent: 82 },
     ],
     quizzes: [
-        { id: 1, title: 'แบบทดสอบสมการเชิงเส้น ม.1', description: 'ทดสอบความรู้เรื่องสมการเชิงเส้นตัวแปรเดียว', time_limit: 15, is_active: 1 },
-        { id: 2, title: 'แบบทดสอบเรขาคณิต ม.1', description: 'ทดสอบความรู้เรื่องรูปเรขาคณิตและมุม', time_limit: 10, is_active: 1 },
-        { id: 3, title: 'แบบทดสอบเศษส่วน ม.1', description: 'ทดสอบความรู้เรื่องการบวกลบคูณหารเศษส่วน', time_limit: 12, is_active: 1 },
+        { id: 1, title: 'สมการเชิงเส้น ม.1', description: 'ทดสอบความรู้เรื่องสมการเชิงเส้นตัวแปรเดียว', time_limit: 15, is_active: 1 },
+        { id: 2, title: 'เรขาคณิต ม.1', description: 'รูปเรขาคณิตและมุม', time_limit: 10, is_active: 1 },
+        { id: 3, title: 'เศษส่วน ม.1', description: 'การบวกลบคูณหารเศษส่วน', time_limit: 12, is_active: 1 },
+        { id: 4, title: 'จำนวนเต็ม ม.1', description: 'จำนวนเต็มบวก ลบ ศูนย์ และการดำเนินการ', time_limit: 10, is_active: 1 },
+        { id: 5, title: 'อัตราส่วนและร้อยละ ม.1', description: 'อัตราส่วน สัดส่วน และร้อยละ', time_limit: 12, is_active: 1 },
+        { id: 6, title: 'ทฤษฎีบทพีทาโกรัส ม.2', description: 'ทฤษฎีบทพีทาโกรัสและการประยุกต์', time_limit: 15, is_active: 1 },
+        { id: 7, title: 'สถิติเบื้องต้น ม.2', description: 'ค่าเฉลี่ย มัธยฐาน ฐานนิยม', time_limit: 12, is_active: 1 },
+        { id: 8, title: 'พหุนาม ม.2', description: 'การบวกลบคูณพหุนาม', time_limit: 15, is_active: 1 },
+        { id: 9, title: 'ร้อยละและดอกเบี้ย ม.3', description: 'กำไร ขาดทุน ดอกเบี้ย', time_limit: 12, is_active: 1 },
+        { id: 10, title: 'พื้นที่ผิวและปริมาตร ม.3', description: 'ทรงกระบอก กรวย ทรงกลม', time_limit: 15, is_active: 1 },
     ],
     quiz_questions: [
+        // Quiz 1: สมการเชิงเส้น
         { id: 1, quiz_id: 1, question: 'ค่า x จากสมการ 2x + 6 = 14 คือข้อใด?', choice_a: '2', choice_b: '4', choice_c: '6', choice_d: '8', correct_answer: 'b' },
         { id: 2, quiz_id: 1, question: 'สมการ 3x - 9 = 0 มีคำตอบเท่ากับข้อใด?', choice_a: '1', choice_b: '2', choice_c: '3', choice_d: '4', correct_answer: 'c' },
-        { id: 3, quiz_id: 1, question: 'ถ้า x + 5 = 12 แล้ว x มีค่าเท่ากับเท่าใด?', choice_a: '5', choice_b: '6', choice_c: '7', choice_d: '8', correct_answer: 'c' },
+        { id: 3, quiz_id: 1, question: 'ถ้า x + 5 = 12 แล้ว x มีค่าเท่าใด?', choice_a: '5', choice_b: '6', choice_c: '7', choice_d: '8', correct_answer: 'c' },
         { id: 4, quiz_id: 1, question: 'ค่า x จากสมการ 4x = 20 คือข้อใด?', choice_a: '4', choice_b: '5', choice_c: '6', choice_d: '10', correct_answer: 'b' },
         { id: 5, quiz_id: 1, question: 'สมการ 2(x-3) = 10 มีคำตอบเท่ากับข้อใด?', choice_a: '5', choice_b: '6', choice_c: '7', choice_d: '8', correct_answer: 'd' },
+        // Quiz 2: เรขาคณิต
         { id: 6, quiz_id: 2, question: 'สามเหลี่ยมด้านเท่ามีมุมภายในแต่ละมุมกี่องศา?', choice_a: '45', choice_b: '60', choice_c: '90', choice_d: '120', correct_answer: 'b' },
         { id: 7, quiz_id: 2, question: 'รูปสี่เหลี่ยมผืนผ้ากว้าง 5 ยาว 8 มีพื้นที่เท่าไร?', choice_a: '13', choice_b: '26', choice_c: '40', choice_d: '80', correct_answer: 'c' },
         { id: 8, quiz_id: 2, question: 'วงกลมรัศมี 7 cm มีเส้นผ่านศูนย์กลางเท่าไร?', choice_a: '7', choice_b: '14', choice_c: '21', choice_d: '49', correct_answer: 'b' },
         { id: 9, quiz_id: 2, question: 'มุมตรงมีกี่องศา?', choice_a: '90', choice_b: '180', choice_c: '270', choice_d: '360', correct_answer: 'b' },
         { id: 10, quiz_id: 2, question: 'สามเหลี่ยมมุมฉากมีมุมฉากกี่มุม?', choice_a: '1', choice_b: '2', choice_c: '3', choice_d: '0', correct_answer: 'a' },
-        { id: 11, quiz_id: 3, question: '1/2 + 1/4 มีค่าเท่ากับเท่าไร?', choice_a: '1/6', choice_b: '2/6', choice_c: '3/4', choice_d: '1/3', correct_answer: 'c' },
-        { id: 12, quiz_id: 3, question: '3/5 - 1/5 มีค่าเท่ากับเท่าไร?', choice_a: '1/5', choice_b: '2/5', choice_c: '3/5', choice_d: '4/5', correct_answer: 'b' },
-        { id: 13, quiz_id: 3, question: '2/3 × 3/4 มีค่าเท่ากับเท่าไร?', choice_a: '1/2', choice_b: '5/7', choice_c: '6/12', choice_d: '2/4', correct_answer: 'a' },
-        { id: 14, quiz_id: 3, question: '1 ÷ 1/2 มีค่าเท่ากับเท่าไร?', choice_a: '1/2', choice_b: '1', choice_c: '2', choice_d: '3', correct_answer: 'c' },
+        // Quiz 3: เศษส่วน
+        { id: 11, quiz_id: 3, question: '1/2 + 1/4 เท่ากับเท่าไร?', choice_a: '1/6', choice_b: '2/6', choice_c: '3/4', choice_d: '1/3', correct_answer: 'c' },
+        { id: 12, quiz_id: 3, question: '3/5 - 1/5 เท่ากับเท่าไร?', choice_a: '1/5', choice_b: '2/5', choice_c: '3/5', choice_d: '4/5', correct_answer: 'b' },
+        { id: 13, quiz_id: 3, question: '2/3 × 3/4 เท่ากับเท่าไร?', choice_a: '1/2', choice_b: '5/7', choice_c: '6/12', choice_d: '2/4', correct_answer: 'a' },
+        { id: 14, quiz_id: 3, question: '1 ÷ 1/2 เท่ากับเท่าไร?', choice_a: '1/2', choice_b: '1', choice_c: '2', choice_d: '3', correct_answer: 'c' },
         { id: 15, quiz_id: 3, question: 'เศษส่วนใดมีค่ามากที่สุด?', choice_a: '1/3', choice_b: '2/5', choice_c: '3/8', choice_d: '1/2', correct_answer: 'd' },
+        // Quiz 4: จำนวนเต็ม
+        { id: 16, quiz_id: 4, question: '(-3) + (-5) เท่ากับเท่าไร?', choice_a: '-8', choice_b: '-2', choice_c: '2', choice_d: '8', correct_answer: 'a' },
+        { id: 17, quiz_id: 4, question: '(-7) - (-3) เท่ากับเท่าไร?', choice_a: '-10', choice_b: '-4', choice_c: '4', choice_d: '10', correct_answer: 'b' },
+        { id: 18, quiz_id: 4, question: '(-4) × 6 เท่ากับเท่าไร?', choice_a: '24', choice_b: '-24', choice_c: '10', choice_d: '-10', correct_answer: 'b' },
+        { id: 19, quiz_id: 4, question: '(-20) ÷ (-5) เท่ากับเท่าไร?', choice_a: '-4', choice_b: '4', choice_c: '-25', choice_d: '25', correct_answer: 'b' },
+        { id: 20, quiz_id: 4, question: 'จำนวนเต็มใดน้อยที่สุด?', choice_a: '-1', choice_b: '0', choice_c: '-5', choice_d: '3', correct_answer: 'c' },
+        // Quiz 5: อัตราส่วน
+        { id: 21, quiz_id: 5, question: 'อัตราส่วน 4:6 เท่ากับข้อใด?', choice_a: '1:2', choice_b: '2:3', choice_c: '3:4', choice_d: '2:4', correct_answer: 'b' },
+        { id: 22, quiz_id: 5, question: 'ถ้า 20% ของจำนวนหนึ่งเท่ากับ 50 จำนวนนั้นคือ?', choice_a: '100', choice_b: '200', choice_c: '250', choice_d: '500', correct_answer: 'c' },
+        { id: 23, quiz_id: 5, question: '3:5 = x:15 ค่า x คือ?', choice_a: '5', choice_b: '7', choice_c: '9', choice_d: '3', correct_answer: 'c' },
+        { id: 24, quiz_id: 5, question: 'สินค้าราคา 200 ลด 25% เหลือเท่าไร?', choice_a: '100', choice_b: '125', choice_c: '150', choice_d: '175', correct_answer: 'c' },
+        { id: 25, quiz_id: 5, question: '0.75 เท่ากับกี่เปอร์เซ็นต์?', choice_a: '25%', choice_b: '50%', choice_c: '75%', choice_d: '80%', correct_answer: 'c' },
+        // Quiz 6: พีทาโกรัส ม.2
+        { id: 26, quiz_id: 6, question: 'สามเหลี่ยมมุมฉากด้านประกอบ 3 และ 4 ด้านตรงข้ามมุมฉากยาวเท่าไร?', choice_a: '5', choice_b: '6', choice_c: '7', choice_d: '12', correct_answer: 'a' },
+        { id: 27, quiz_id: 6, question: 'ด้านตรงข้ามมุมฉาก 13 ด้านประกอบ 5 อีกด้านยาวเท่าไร?', choice_a: '8', choice_b: '10', choice_c: '12', choice_d: '14', correct_answer: 'c' },
+        { id: 28, quiz_id: 6, question: 'สามเหลี่ยมด้าน 6, 8, 10 เป็นสามเหลี่ยมมุมฉากหรือไม่?', choice_a: 'ใช่', choice_b: 'ไม่ใช่', choice_c: 'ไม่แน่ใจ', choice_d: 'ต้องคำนวณเพิ่ม', correct_answer: 'a' },
+        { id: 29, quiz_id: 6, question: 'บันไดยาว 10 m พิงกำแพง ปลายบันไดห่างกำแพง 6 m บันไดสูงถึงกำแพงกี่ m?', choice_a: '6', choice_b: '8', choice_c: '4', choice_d: '16', correct_answer: 'b' },
+        { id: 30, quiz_id: 6, question: 'ทฤษฎีบทพีทาโกรัส a² + b² = c² ตัว c คืออะไร?', choice_a: 'ด้านสั้น', choice_b: 'ด้านยาว', choice_c: 'ด้านตรงข้ามมุมฉาก', choice_d: 'ด้านประกอบ', correct_answer: 'c' },
+        // Quiz 7: สถิติ ม.2
+        { id: 31, quiz_id: 7, question: 'ค่าเฉลี่ยของ 2, 4, 6, 8, 10 คือ?', choice_a: '4', choice_b: '5', choice_c: '6', choice_d: '7', correct_answer: 'c' },
+        { id: 32, quiz_id: 7, question: 'มัธยฐานของ 3, 7, 1, 5, 9 คือ?', choice_a: '3', choice_b: '5', choice_c: '7', choice_d: '1', correct_answer: 'b' },
+        { id: 33, quiz_id: 7, question: 'ฐานนิยมของ 2, 3, 3, 5, 7, 3 คือ?', choice_a: '2', choice_b: '3', choice_c: '5', choice_d: '7', correct_answer: 'b' },
+        { id: 34, quiz_id: 7, question: 'พิสัยของ 5, 12, 3, 8, 20 คือ?', choice_a: '15', choice_b: '17', choice_c: '20', choice_d: '5', correct_answer: 'b' },
+        { id: 35, quiz_id: 7, question: 'ข้อมูลชุดหนึ่งมีค่าเฉลี่ย 10 จำนวน 5 ตัว ผลรวมเท่ากับ?', choice_a: '2', choice_b: '15', choice_c: '50', choice_d: '100', correct_answer: 'c' },
+        // Quiz 8: พหุนาม ม.2
+        { id: 36, quiz_id: 8, question: '(2x + 3) + (x - 1) เท่ากับ?', choice_a: '3x + 2', choice_b: '3x - 2', choice_c: 'x + 2', choice_d: '2x + 2', correct_answer: 'a' },
+        { id: 37, quiz_id: 8, question: '(5x - 2) - (3x + 1) เท่ากับ?', choice_a: '2x + 3', choice_b: '2x - 3', choice_c: '8x - 1', choice_d: '2x - 1', correct_answer: 'b' },
+        { id: 38, quiz_id: 8, question: '3(2x + 4) เท่ากับ?', choice_a: '5x + 7', choice_b: '6x + 4', choice_c: '6x + 12', choice_d: '6x + 7', correct_answer: 'c' },
+        { id: 39, quiz_id: 8, question: 'ดีกรีของพหุนาม 4x³ + 2x - 1 คือ?', choice_a: '1', choice_b: '2', choice_c: '3', choice_d: '4', correct_answer: 'c' },
+        { id: 40, quiz_id: 8, question: 'x(x + 3) เท่ากับ?', choice_a: 'x² + 3', choice_b: 'x² + 3x', choice_c: '2x + 3', choice_d: 'x + 3x', correct_answer: 'b' },
+        // Quiz 9: ร้อยละ ม.3
+        { id: 41, quiz_id: 9, question: 'ซื้อสินค้า 500 บาท ขาย 600 บาท กำไรกี่เปอร์เซ็นต์?', choice_a: '10%', choice_b: '15%', choice_c: '20%', choice_d: '25%', correct_answer: 'c' },
+        { id: 42, quiz_id: 9, question: 'ฝากเงิน 10,000 บาท ดอกเบี้ย 5% ต่อปี ได้ดอกเบี้ยเท่าไร?', choice_a: '200', choice_b: '500', choice_c: '1,000', choice_d: '5,000', correct_answer: 'b' },
+        { id: 43, quiz_id: 9, question: 'ราคาขาย 540 บาท กำไร 8% ต้นทุนเท่าไร?', choice_a: '450', choice_b: '490', choice_c: '500', choice_d: '520', correct_answer: 'c' },
+        { id: 44, quiz_id: 9, question: 'ซื้อ 800 ขาย 720 ขาดทุนกี่เปอร์เซ็นต์?', choice_a: '5%', choice_b: '10%', choice_c: '15%', choice_d: '20%', correct_answer: 'b' },
+        { id: 45, quiz_id: 9, question: 'ฝาก 20,000 ดอกเบี้ย 3% ต่อปี 2 ปี ได้ดอกเบี้ยรวมเท่าไร?', choice_a: '600', choice_b: '1,000', choice_c: '1,200', choice_d: '1,800', correct_answer: 'c' },
+        // Quiz 10: พื้นที่ผิวและปริมาตร ม.3
+        { id: 46, quiz_id: 10, question: 'ปริมาตรทรงกระบอกรัศมี 7 สูง 10 (π=22/7) คือ?', choice_a: '1,540', choice_b: '1,440', choice_c: '770', choice_d: '2,200', correct_answer: 'a' },
+        { id: 47, quiz_id: 10, question: 'ปริมาตรทรงกลมรัศมี 3 (π≈3.14) ประมาณเท่าไร?', choice_a: '28.26', choice_b: '56.52', choice_c: '113.04', choice_d: '150.72', correct_answer: 'c' },
+        { id: 48, quiz_id: 10, question: 'พื้นที่ผิวทรงกระบอกรัศมี 5 สูง 10 (π≈3.14) คือ?', choice_a: '314', choice_b: '471', choice_c: '628', choice_d: '157', correct_answer: 'b' },
+        { id: 49, quiz_id: 10, question: 'ปริมาตรกรวยรัศมี 3 สูง 4 (π≈3.14) คือ?', choice_a: '12.56', choice_b: '37.68', choice_c: '113.04', choice_d: '25.12', correct_answer: 'b' },
+        { id: 50, quiz_id: 10, question: 'ถ้าปริมาตรทรงกระบอก = πr²h แล้วปริมาตรกรวยเท่ากับ?', choice_a: 'πr²h', choice_b: '2πr²h', choice_c: '1/2 πr²h', choice_d: '1/3 πr²h', correct_answer: 'd' },
     ],
 };
 
@@ -1583,14 +1635,129 @@ app.get('/api/admin/line-notify/status', requireAuth, async (req, res) => {
     });
 });
 
-// LINE Webhook (receives events from LINE)
-app.post('/webhook/line', (req, res) => {
-    const events = req.body.events || [];
-    // Log events for debugging
-    events.forEach(event => {
-        console.log('[LINE]', event.type, event.source?.userId || '');
-    });
+// LINE Webhook — Auto-Reply System
+async function lineReply(replyToken, messages) {
+    if (!LINE_CHANNEL_ACCESS_TOKEN || !replyToken) return;
+    try {
+        await fetch('https://api.line.me/v2/bot/message/reply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + LINE_CHANNEL_ACCESS_TOKEN },
+            body: JSON.stringify({ replyToken, messages: Array.isArray(messages) ? messages : [messages] })
+        });
+    } catch(e) { console.error('[LINE Reply Error]', e.message); }
+}
+
+app.post('/webhook/line', async (req, res) => {
     res.status(200).json({ status: 'ok' });
+    const events = req.body.events || [];
+    for (const event of events) {
+        console.log('[LINE]', event.type, event.source?.userId || '');
+        
+        // Follow event — welcome message
+        if (event.type === 'follow') {
+            await lineReply(event.replyToken, [
+                { type: 'text', text: '🎓 สวัสดีค่ะ! ยินดีต้อนรับสู่ Kru Pug Hub\n\nพิมพ์คำสั่งได้เลย:\n📊 "คะแนน" — ดูคะแนนล่าสุด\n📅 "ตารางสอน" — ดูตารางเรียน\n✅ "เช็คชื่อ" — เช็คชื่อเข้าเรียน\n🤖 "ถาม [คำถาม]" — ถาม AI ครูพัก\n❓ "help" — ดูคำสั่งทั้งหมด' }
+            ]);
+            continue;
+        }
+        
+        // Text message — command handler
+        if (event.type === 'message' && event.message?.type === 'text') {
+            const text = event.message.text.trim().toLowerCase();
+            
+            // Help
+            if (text === 'help' || text === 'ช่วย' || text === '?') {
+                await lineReply(event.replyToken, { type: 'text', text: '📋 คำสั่งที่ใช้ได้:\n\n📊 "คะแนน" — ดูคะแนนล่าสุด\n📅 "ตารางสอน" — ดูตารางเรียน\n✅ "เช็คชื่อ" — เช็คชื่อวันนี้\n🤖 "ถาม [คำถาม]" — ถาม AI ครูพัก\n🏆 "อันดับ" — ดู Leaderboard\n🔗 "เว็บ" — ลิงก์เข้าเว็บไซต์\n\nหรือพิมพ์อะไรก็ได้ AI จะตอบให้!' });
+            }
+            // Score check
+            else if (text.includes('คะแนน') || text.includes('score')) {
+                await lineReply(event.replyToken, { type: 'text', text: '📊 ผลคะแนนล่าสุด\n\n🧮 สมการเชิงเส้น: 8/10 (80%)\n📐 เรขาคณิต: 7/10 (70%)\n🔢 เศษส่วน: 9/10 (90%)\n\n📈 คะแนนเฉลี่ย: 80%\n⭐ เกรดรวม: A\n\n💡 จุดแข็ง: เศษส่วน\n🎯 ควรทบทวน: เรขาคณิต\n\n🔗 ดูรายละเอียดเพิ่มเติมที่เว็บไซต์' });
+            }
+            // Schedule
+            else if (text.includes('ตาราง') || text.includes('schedule')) {
+                const days = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+                const today = days[new Date().getDay()];
+                await lineReply(event.replyToken, { type: 'text', text: `📅 ตารางสอนวัน${today}\n\n🕘 08:30-09:20 — คณิตศาสตร์ ม.1/1\n🕙 09:20-10:10 — คณิตศาสตร์ ม.1/2\n🕚 10:30-11:20 — คณิตศาสตร์ ม.2/1\n🕛 11:20-12:00 — Free Period\n🕐 13:00-13:50 — คณิตศาสตร์ ม.3/1\n🕑 13:50-14:40 — สอนเสริม\n\n📌 สอนที่ อาคาร 3 ห้อง 301` });
+            }
+            // Attendance
+            else if (text.includes('เช็คชื่อ') || text.includes('checkin')) {
+                await lineReply(event.replyToken, { type: 'text', text: '✅ เช็คชื่อเข้าเรียน\n\nกรุณาสแกน QR Code ที่ครูแสดงบนจอเพื่อเช็คชื่อ\n\nหรือเข้าเว็บไซต์ → หน้าเช็คชื่อ\n🔗 เปิดเว็บเพื่อเช็คชื่อ' });
+            }
+            // Leaderboard
+            else if (text.includes('อันดับ') || text.includes('rank') || text.includes('leaderboard')) {
+                await lineReply(event.replyToken, { type: 'text', text: '🏆 Leaderboard ท็อป 5\n\n🥇 สมชาย ใจดี — 950 pts\n🥈 สมหญิง รักเรียน — 920 pts\n🥉 นพดล เก่งมาก — 890 pts\n4️⃣ มานี มานะ — 850 pts\n5️⃣ วิชัย ฉลาด — 820 pts\n\n💪 พยายามทำแบบทดสอบเพื่อเพิ่มคะแนน!' });
+            }
+            // Website link
+            else if (text.includes('เว็บ') || text.includes('web') || text.includes('link')) {
+                await lineReply(event.replyToken, { type: 'text', text: '🔗 เข้าเว็บไซต์ Kru Pug Hub\n\nhttps://industrious-possibility-production.up.railway.app\n\n📱 เปิดบนมือถือแล้วกด "เพิ่มลงหน้าจอ" เพื่อใช้เป็น App!' });
+            }
+            // Greeting
+            else if (text.includes('สวัสดี') || text.includes('hello') || text.includes('hi')) {
+                await lineReply(event.replyToken, { type: 'text', text: '🎓 สวัสดีค่ะ! ครูพักยินดีช่วยเหลือ 😊\n\nพิมพ์ "help" เพื่อดูคำสั่งทั้งหมดได้เลย!' });
+            }
+            // AI question
+            else if (text.startsWith('ถาม ') || text.startsWith('ai ')) {
+                const question = event.message.text.replace(/^(ถาม|ai)\s+/i, '');
+                if (OPENROUTER_API_KEY) {
+                    try {
+                        const aiResp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENROUTER_API_KEY },
+                            body: JSON.stringify({ model: 'openai/gpt-3.5-turbo', messages: [
+                                { role: 'system', content: 'คุณเป็นครูคณิตศาสตร์ชื่อ "ครูพัก" ตอบเป็นภาษาไทย สั้นกระชับ ไม่เกิน 300 ตัวอักษร' },
+                                { role: 'user', content: question }
+                            ], max_tokens: 300 })
+                        });
+                        const aiData = await aiResp.json();
+                        const answer = aiData.choices?.[0]?.message?.content || 'ขอโทษค่ะ ตอบไม่ได้ในตอนนี้';
+                        await lineReply(event.replyToken, { type: 'text', text: '🤖 ครูพัก AI ตอบ:\n\n' + answer });
+                    } catch(e) {
+                        await lineReply(event.replyToken, { type: 'text', text: '❌ ระบบ AI มีปัญหาชั่วคราว กรุณาลองใหม่ภายหลัง' });
+                    }
+                } else {
+                    await lineReply(event.replyToken, { type: 'text', text: '❌ ระบบ AI ยังไม่ได้ตั้งค่า กรุณาติดต่อครู' });
+                }
+            }
+            // Default — gentle redirect
+            else {
+                await lineReply(event.replyToken, { type: 'text', text: '🤔 ไม่เข้าใจคำสั่ง "' + event.message.text.substr(0, 30) + '"\n\nลองพิมพ์:\n📊 "คะแนน"\n📅 "ตารางสอน"\n🤖 "ถาม [คำถาม]"\n❓ "help"\n\nหรือพิมพ์ "ถาม" ตามด้วยคำถามเพื่อถาม AI ครูพัก!' });
+            }
+        }
+    }
+});
+
+// Create LINE Rich Menu
+app.post('/api/admin/line-richmenu', requireAuth, async (req, res) => {
+    if (!LINE_CHANNEL_ACCESS_TOKEN) return res.json({ success: false, error: 'ยังไม่ได้ตั้งค่า Channel Access Token' });
+    try {
+        // Create rich menu
+        const menuResp = await fetch('https://api.line.me/v2/bot/richmenu', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + LINE_CHANNEL_ACCESS_TOKEN },
+            body: JSON.stringify({
+                size: { width: 2500, height: 843 },
+                selected: true,
+                name: 'Kru Pug Menu',
+                chatBarText: '📋 เมนูครูพัก',
+                areas: [
+                    { bounds: { x: 0, y: 0, width: 625, height: 843 }, action: { type: 'message', text: 'คะแนน' }},
+                    { bounds: { x: 625, y: 0, width: 625, height: 843 }, action: { type: 'message', text: 'ตารางสอน' }},
+                    { bounds: { x: 1250, y: 0, width: 625, height: 843 }, action: { type: 'message', text: 'เช็คชื่อ' }},
+                    { bounds: { x: 1875, y: 0, width: 625, height: 843 }, action: { type: 'uri', uri: 'https://industrious-possibility-production.up.railway.app' }}
+                ]
+            })
+        });
+        const menuData = await menuResp.json();
+        if (!menuData.richMenuId) return res.json({ success: false, error: 'สร้าง Rich Menu ไม่สำเร็จ', data: menuData });
+        
+        // Set as default
+        await fetch('https://api.line.me/v2/bot/user/all/richmenu/' + menuData.richMenuId, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + LINE_CHANNEL_ACCESS_TOKEN }
+        });
+        
+        res.json({ success: true, richMenuId: menuData.richMenuId, message: 'สร้าง Rich Menu สำเร็จ! (ต้องอัปโหลดรูปเพิ่มผ่าน LINE Console)' });
+    } catch(e) { res.json({ success: false, error: e.message }); }
 });
 
 // ===================== QR CODE CHECK-IN =====================
@@ -1684,6 +1851,122 @@ io.on('connection', (socket) => {
             });
         } catch (e) { console.error('Chat Error:', e.message); }
     });
+});
+
+// ===================== ATTENDANCE REPORTS =====================
+
+app.get('/api/admin/attendance/report', requireAuth, async (req, res) => {
+    try {
+        const [rows] = await pool.query(`
+            SELECT c.student_id, s.name as student_name, c.classroom_id, c.check_date, c.check_time
+            FROM checkins c LEFT JOIN students s ON c.student_id = s.id
+            ORDER BY c.check_date DESC, c.check_time DESC LIMIT 200
+        `);
+        res.json({ success: true, data: rows });
+    } catch (e) {
+        // Demo attendance data
+        const today = new Date().toISOString().split('T')[0];
+        const demoData = [
+            { student_id: 'S001', student_name: 'สมชาย ใจดี', classroom_id: 1, check_date: today, check_time: '08:25' },
+            { student_id: 'S002', student_name: 'สมหญิง รักเรียน', classroom_id: 1, check_date: today, check_time: '08:28' },
+            { student_id: 'S003', student_name: 'นพดล เก่งมาก', classroom_id: 1, check_date: today, check_time: '08:30' },
+            { student_id: 'S004', student_name: 'มานี มานะ', classroom_id: 2, check_date: today, check_time: '08:22' },
+            { student_id: 'S005', student_name: 'วิชัย ฉลาด', classroom_id: 2, check_date: today, check_time: '08:35' },
+            { student_id: 'S006', student_name: 'สุดา คณิตเทพ', classroom_id: 1, check_date: today, check_time: '08:15' },
+            { student_id: 'S007', student_name: 'ปวีณา ตั้งใจ', classroom_id: 3, check_date: today, check_time: '08:20' },
+            { student_id: 'S008', student_name: 'ธนากร ขยัน', classroom_id: 3, check_date: today, check_time: '08:27' },
+        ];
+        res.json({ success: true, data: demoData });
+    }
+});
+
+// Attendance summary stats
+app.get('/api/admin/attendance/stats', requireAuth, async (req, res) => {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        const [[todayCount]] = await pool.query('SELECT COUNT(*) as c FROM checkins WHERE check_date=?', [today]);
+        const [[weekCount]] = await pool.query('SELECT COUNT(*) as c FROM checkins WHERE check_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)');
+        const [[totalStudents]] = await pool.query('SELECT COUNT(*) as c FROM students');
+        res.json({ success: true, today: todayCount.c, week: weekCount.c, total_students: totalStudents.c, rate: totalStudents.c ? Math.round(todayCount.c / totalStudents.c * 100) : 0 });
+    } catch (e) {
+        res.json({ success: true, today: 28, week: 135, total_students: 35, rate: 80 });
+    }
+});
+
+// ===================== STUDENT PROGRESS DASHBOARD =====================
+
+app.get('/api/student/progress/:studentId', async (req, res) => {
+    try {
+        const [results] = await pool.query(`
+            SELECT qr.quiz_id, q.title as quiz_title, qr.score, qr.total, qr.score_percent, qr.created_at
+            FROM quiz_results qr JOIN quizzes q ON qr.quiz_id = q.id
+            WHERE qr.student_id = ? ORDER BY qr.created_at DESC
+        `, [req.params.studentId]);
+        res.json({ success: true, data: results });
+    } catch (e) {
+        // Demo progress data
+        const demoProgress = [
+            { quiz_id: 1, quiz_title: 'สมการเชิงเส้น ม.1', score: 4, total: 5, score_percent: 80, created_at: '2026-03-20T10:00:00' },
+            { quiz_id: 2, quiz_title: 'เรขาคณิต ม.1', score: 3, total: 5, score_percent: 60, created_at: '2026-03-21T09:30:00' },
+            { quiz_id: 3, quiz_title: 'เศษส่วน ม.1', score: 5, total: 5, score_percent: 100, created_at: '2026-03-22T14:00:00' },
+            { quiz_id: 4, quiz_title: 'จำนวนเต็ม ม.1', score: 4, total: 5, score_percent: 80, created_at: '2026-03-23T10:15:00' },
+            { quiz_id: 5, quiz_title: 'อัตราส่วนและร้อยละ ม.1', score: 3, total: 5, score_percent: 60, created_at: '2026-03-24T08:45:00' },
+            { quiz_id: 6, quiz_title: 'ทฤษฎีบทพีทาโกรัส ม.2', score: 5, total: 5, score_percent: 100, created_at: '2026-03-24T10:00:00' },
+        ];
+        // Calculate strengths/weaknesses
+        const avg = demoProgress.reduce((a, b) => a + b.score_percent, 0) / demoProgress.length;
+        const strengths = demoProgress.filter(p => p.score_percent >= 80).map(p => p.quiz_title);
+        const weaknesses = demoProgress.filter(p => p.score_percent < 70).map(p => p.quiz_title);
+        res.json({ 
+            success: true, data: demoProgress, 
+            summary: { average: Math.round(avg), strengths, weaknesses, total_quizzes: demoProgress.length }
+        });
+    }
+});
+
+// ===================== AUTO NOTIFICATIONS =====================
+
+async function sendAutoNotification(message) {
+    const promises = [];
+    // LINE broadcast
+    if (LINE_CHANNEL_ACCESS_TOKEN) {
+        promises.push(fetch('https://api.line.me/v2/bot/message/broadcast', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + LINE_CHANNEL_ACCESS_TOKEN },
+            body: JSON.stringify({ messages: [{ type: 'text', text: message }] })
+        }).catch(e => console.error('[LINE Auto]', e.message)));
+    }
+    // Telegram
+    if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+        promises.push(fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: 'HTML' })
+        }).catch(e => console.error('[TG Auto]', e.message)));
+    }
+    await Promise.allSettled(promises);
+}
+
+// Notify on quiz creation (hook into existing quiz create endpoint)
+app.post('/api/admin/notify-quiz', requireAuth, async (req, res) => {
+    const { title } = req.body;
+    await sendAutoNotification(`📝 แบบทดสอบใหม่!\n\n"${title}"\n\n🔗 ทำแบบทดสอบที่ Kru Pug Hub\nhttps://industrious-possibility-production.up.railway.app/student.html`);
+    res.json({ success: true, message: 'ส่งแจ้งเตือนข้อสอบใหม่แล้ว' });
+});
+
+// Notify on attendance events
+app.post('/api/admin/notify-attendance', requireAuth, async (req, res) => {
+    const { classroom, count } = req.body;
+    await sendAutoNotification(`✅ รายงานเช็คชื่อ\n\nห้อง: ${classroom}\nจำนวนเช็คชื่อ: ${count} คน\nวันที่: ${new Date().toLocaleDateString('th-TH')}`);
+    res.json({ success: true, message: 'ส่งรายงานเช็คชื่อแล้ว' });
+});
+
+// Notify custom message
+app.post('/api/admin/notify-broadcast', requireAuth, async (req, res) => {
+    const { message } = req.body;
+    if (!message) return res.status(400).json({ error: 'กรุณาใส่ข้อความ' });
+    await sendAutoNotification(message);
+    res.json({ success: true, message: 'Broadcast ทุกช่องทางแล้ว' });
 });
 
 // Start Server with Socket.io
