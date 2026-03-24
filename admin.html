@@ -505,6 +505,60 @@
                 <button class="btn-glow btn-full" style="background:#06c755;" onclick="createRichMenu()"><i class="fa-solid fa-plus"></i> สร้าง Rich Menu</button>
                 <div id="richmenu-result" style="display:none;padding:12px;border-radius:8px;font-size:0.9rem;margin-top:12px;"></div>
             </div>
+
+            <!-- Homework Manager -->
+            <div class="glass-card" style="margin-top:24px;max-width:600px;">
+                <h3><i class="fa-solid fa-book" style="color:#a855f7;"></i> สั่งการบ้าน</h3>
+                <div class="form-group"><label>ชื่อการบ้าน</label><input class="glass-input" id="hw-title" placeholder="เช่น แบบฝึกหัดบทที่ 5"></div>
+                <div class="form-group"><label>รายละเอียด</label><textarea class="glass-input" id="hw-desc" rows="2" placeholder="คำอธิบายเพิ่มเติม..."></textarea></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group"><label>กำหนดส่ง</label><input type="date" class="glass-input" id="hw-due"></div>
+                    <div class="form-group"><label>คะแนนเต็ม</label><input type="number" class="glass-input" id="hw-points" value="10"></div>
+                </div>
+                <button class="btn-glow btn-full" style="background:#a855f7;" onclick="createHomework()"><i class="fa-solid fa-plus"></i> สั่งการบ้าน + แจ้งเตือน</button>
+                <div id="hw-result" style="display:none;padding:12px;border-radius:8px;font-size:0.9rem;margin-top:12px;"></div>
+            </div>
+
+            <!-- AI Quiz Generator -->
+            <div class="glass-card" style="margin-top:24px;max-width:600px;">
+                <h3><i class="fa-solid fa-robot" style="color:#ec4899;"></i> สร้างข้อสอบด้วย AI</h3>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">ป้อนหัวข้อ แล้ว AI จะสร้างข้อสอบให้อัตโนมัติ</p>
+                <div class="form-group"><label>หัวข้อ</label><input class="glass-input" id="ai-topic" placeholder="เช่น สมการกำลังสอง"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group"><label>ระดับชั้น</label><select class="glass-input" id="ai-level"><option value="1">ม.1</option><option value="2">ม.2</option><option value="3">ม.3</option></select></div>
+                    <div class="form-group"><label>จำนวนข้อ</label><input type="number" class="glass-input" id="ai-count" value="5" min="1" max="20"></div>
+                </div>
+                <button class="btn-glow btn-full" style="background:linear-gradient(135deg,#ec4899,#a855f7);" onclick="generateAIQuiz()"><i class="fa-solid fa-wand-magic-sparkles"></i> สร้างข้อสอบด้วย AI</button>
+                <div id="ai-quiz-result" style="display:none;margin-top:16px;"></div>
+            </div>
+
+            <!-- Schedule Notifications -->
+            <div class="glass-card" style="margin-top:24px;max-width:600px;">
+                <h3><i class="fa-solid fa-clock" style="color:#f59e0b;"></i> แจ้งเตือนตั้งเวลา</h3>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">ส่งข้อความอัตโนมัติตามเวลาที่กำหนด</p>
+                <div class="form-group"><textarea class="glass-input" id="schedule-msg" rows="2" placeholder="ข้อความที่จะส่ง..."></textarea></div>
+                <div class="form-group"><label>ความถี่</label>
+                    <select class="glass-input" id="schedule-interval">
+                        <option value="60">ทุก 1 ชั่วโมง</option>
+                        <option value="360">ทุก 6 ชั่วโมง</option>
+                        <option value="720">ทุก 12 ชั่วโมง</option>
+                        <option value="1440" selected>ทุกวัน (24 ชม.)</option>
+                        <option value="10080">ทุกสัปดาห์</option>
+                    </select>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <button class="btn-glow btn-full" style="background:#f59e0b;" onclick="toggleSchedule(true)"><i class="fa-solid fa-play"></i> เริ่มตั้งเวลา</button>
+                    <button class="btn-glow btn-full" style="background:#6b7280;" onclick="toggleSchedule(false)"><i class="fa-solid fa-stop"></i> หยุด</button>
+                </div>
+                <div id="schedule-result" style="display:none;padding:12px;border-radius:8px;font-size:0.9rem;margin-top:12px;"></div>
+            </div>
+
+            <!-- Export CSV -->
+            <div class="glass-card" style="margin-top:24px;max-width:600px;">
+                <h3><i class="fa-solid fa-file-csv" style="color:#10b981;"></i> Export ข้อมูล</h3>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">ดาวน์โหลดข้อมูลเช็คชื่อเป็น CSV</p>
+                <button class="btn-glow btn-full" style="background:#10b981;" onclick="window.location.href='/api/admin/attendance/export?token='+localStorage.getItem('admin_token')"><i class="fa-solid fa-download"></i> Export เช็คชื่อ (.CSV)</button>
+            </div>
         </div>
     </div>
 

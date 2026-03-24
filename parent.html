@@ -4,151 +4,133 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kru Pug - พอร์ทัลผู้ปกครอง</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="index.css">
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .parent-body { max-width:800px; margin:40px auto; padding:0 20px; }
-        .login-card { max-width:400px; margin:80px auto; text-align:center; }
-        .login-card h2 { margin-bottom:8px; }
-        .login-card p { color:var(--text-muted); margin-bottom:24px; font-size:0.9rem; }
-        .report-section { margin-bottom:24px; }
-        .report-section h3 { margin-bottom:12px; color:var(--primary); }
-        .stat-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:12px; margin-bottom:24px; }
-        .stat-box { text-align:center; padding:16px; }
-        .stat-box .num { font-size:2rem; font-weight:700; }
-        .stat-box .lbl { color:var(--text-muted); font-size:0.8rem; }
-        .report-table { width:100%; border-collapse:collapse; font-size:0.85rem; }
-        .report-table th, .report-table td { padding:8px; text-align:left; border-bottom:1px solid var(--glass-border); }
-        .report-table th { color:var(--primary); }
-        .badge-list { display:flex; flex-wrap:wrap; gap:8px; }
-        .badge-item { background:var(--glass-bg); border:1px solid var(--glass-border); padding:6px 12px; border-radius:20px; font-size:0.85rem; }
-        .status-present { color:#10b981; }
-        .status-late { color:#f59e0b; }
-        .status-absent { color:#ef4444; }
-        [data-theme='light'] .stat-box .num { filter: brightness(0.75); }
+        .parent-container { max-width: 700px; margin: 20px auto; padding: 0 16px; }
+        .login-box { max-width: 400px; margin: 80px auto; text-align: center; }
+        .login-box h1 { font-size: 2rem; margin-bottom: 8px; }
+        .login-box p { color: var(--text-muted); margin-bottom: 24px; }
+        .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px,1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: 16px; text-align: center; }
+        .stat-card .val { font-size: 1.8rem; font-weight: 800; }
+        .stat-card .lbl { font-size: 0.8rem; color: var(--text-muted); }
+        .data-row { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
-    <div class="dynamic-bg"><div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div></div>
-
-    <!-- Floating Utils -->
-    <div class="floating-utils">
-        <button onclick="const c=document.documentElement.getAttribute('data-theme')||'dark';const n=c==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);localStorage.setItem('theme',n);this.textContent=n==='light'?'☀️':'🌙'">🌙</button>
-        <button class="lang-toggle-btn" onclick="toggleKrupugLang()">🇹🇭</button>
-    </div>
-
-    <!-- Login Screen -->
-    <div id="parent-login">
-        <div class="login-card glass-card">
-            <div style="font-size:3rem;margin-bottom:16px;">👨‍👩‍👧</div>
-            <h2 data-i18n="parent_title">พอร์ทัลผู้ปกครอง</h2>
-            <p data-i18n="parent_desc">ดูผลการเรียนของบุตรหลาน</p>
-            <div class="form-group"><input type="text" class="glass-input" id="p-student-id" data-i18n-placeholder="parent_student_id" placeholder="รหัสนักเรียน"></div>
-            <div class="form-group"><input type="password" class="glass-input" id="p-code" data-i18n-placeholder="parent_code" placeholder="รหัสผู้ปกครอง"></div>
-            <button class="btn-glow btn-full" onclick="parentLogin()"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="parent_login">เข้าสู่ระบบ</span></button>
-            <p id="p-error" style="color:#ef4444;display:none;margin-top:12px;"></p>
-            <a href="index.html" style="color:var(--text-muted);display:block;margin-top:16px;" data-i18n="back">← กลับหน้าหลัก</a>
+    <div class="parent-container">
+        <div class="floating-utils">
+            <button onclick="const c=document.documentElement.getAttribute('data-theme')||'dark';const n=c==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);localStorage.setItem('theme',n);this.textContent=n==='light'?'☀️':'🌙'">🌙</button>
         </div>
-    </div>
 
-    <!-- Report Dashboard -->
-    <div id="parent-dashboard" style="display:none;">
-        <div class="parent-body">
-            <div class="glass-card" style="margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;">
+        <!-- Login -->
+        <div id="parent-login">
+            <div class="login-box">
+                <div style="font-size:4rem;margin-bottom:16px;">👨‍👩‍👧</div>
+                <h1>พอร์ทัลผู้ปกครอง</h1>
+                <p>ติดตามผลการเรียนของบุตรหลาน</p>
+                <form onsubmit="parentLogin(event)">
+                    <div class="form-group"><input class="glass-input" id="p-student-id" placeholder="รหัสนักเรียน (เช่น S001)" required></div>
+                    <div class="form-group"><input type="password" class="glass-input" id="p-code" placeholder="รหัสผู้ปกครอง (ค่าเริ่มต้น: 1234)" value="1234"></div>
+                    <p id="p-error" style="color:#ef4444;display:none;margin-bottom:12px;"></p>
+                    <button type="submit" class="btn-glow btn-full"><i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ</button>
+                </form>
+                <p style="margin-top:16px;"><a href="index.html" style="color:var(--text-muted);">&larr; กลับหน้าหลัก</a></p>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="parent-dashboard" style="display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
                 <div>
-                    <h2>👨‍👩‍👧 รายงานผลการเรียน</h2>
-                    <p style="color:var(--text-muted);" id="p-info">นักเรียน: - | ผู้ปกครอง: -</p>
+                    <h2 id="child-name" style="margin:0;"></h2>
+                    <p style="color:var(--text-muted);margin:0;font-size:0.9rem;">ผลการเรียนของบุตรหลาน</p>
                 </div>
-                <button class="btn-outline" onclick="parentLogout()" style="border-color:#ef4444;color:#ef4444;"><i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="parent_logout">ออก</span></button>
+                <button class="btn-outline" onclick="parentLogout()"><i class="fa-solid fa-right-from-bracket"></i></button>
             </div>
 
-            <!-- Stats -->
-            <div class="stat-row">
-                <div class="stat-box glass-card"><p class="num" id="rp-exp" style="color:#8b5cf6;">0</p><p class="lbl">EXP</p></div>
-                <div class="stat-box glass-card"><p class="num" id="rp-level" style="color:#f59e0b;">1</p><p class="lbl">Level</p></div>
-                <div class="stat-box glass-card"><p class="num" id="rp-quizzes" style="color:#10b981;">0</p><p class="lbl">ทำข้อสอบ</p></div>
-                <div class="stat-box glass-card"><p class="num" id="rp-attendance" style="color:#3b82f6;">0</p><p class="lbl">วันเข้าเรียน</p></div>
+            <div class="stat-cards">
+                <div class="stat-card"><div class="val" id="pc-quizzes" style="color:#3b82f6;">0</div><div class="lbl">ทำข้อสอบ</div></div>
+                <div class="stat-card"><div class="val" id="pc-avg" style="color:#10b981;">0%</div><div class="lbl">คะแนนเฉลี่ย</div></div>
+                <div class="stat-card"><div class="val" id="pc-attendance" style="color:#f59e0b;">0</div><div class="lbl">วันเข้าเรียน</div></div>
+                <div class="stat-card"><div class="val" id="pc-homework" style="color:#a855f7;">0</div><div class="lbl">การบ้านส่ง</div></div>
             </div>
 
-            <!-- Badges -->
-            <div class="report-section glass-card">
-                <h3><i class="fa-solid fa-medal"></i> เหรียญรางวัล</h3>
-                <div class="badge-list" id="rp-badges"><p style="color:var(--text-muted);">ยังไม่มี</p></div>
+            <div class="glass-card" style="padding:16px;margin-bottom:16px;">
+                <h3 style="margin:0 0 12px;">📊 ผลสอบล่าสุด</h3>
+                <div id="pc-quiz-list"></div>
             </div>
 
-            <!-- Quiz Results -->
-            <div class="report-section glass-card">
-                <h3><i class="fa-solid fa-pen-ruler"></i> ผลแบบทดสอบ</h3>
-                <table class="report-table"><thead><tr><th>แบบทดสอบ</th><th>คะแนน</th><th>เปอร์เซ็นต์</th><th>วันที่</th></tr></thead>
-                <tbody id="rp-quiz-table"></tbody></table>
+            <div class="glass-card" style="padding:16px;margin-bottom:16px;">
+                <h3 style="margin:0 0 12px;">✅ เช็คชื่อล่าสุด</h3>
+                <div id="pc-attendance-list"></div>
             </div>
 
-            <!-- Attendance -->
-            <div class="report-section glass-card">
-                <h3><i class="fa-solid fa-clipboard-check"></i> ประวัติเช็คชื่อ (30 วัน)</h3>
-                <table class="report-table"><thead><tr><th>วันที่</th><th>สถานะ</th></tr></thead>
-                <tbody id="rp-att-table"></tbody></table>
+            <div class="glass-card" style="padding:16px;">
+                <h3 style="margin:0 0 12px;">📝 การบ้าน</h3>
+                <div id="pc-homework-list"></div>
             </div>
         </div>
     </div>
 
     <script>
-    const API = '';
-    let parentToken = localStorage.getItem('parent_token');
+    if(localStorage.getItem('theme')==='light') document.documentElement.setAttribute('data-theme','light');
+    let PARENT_CHILD = null;
 
-    if (parentToken) loadReport();
-
-    async function parentLogin() {
-        const sid = document.getElementById('p-student-id').value.trim();
-        const code = document.getElementById('p-code').value.trim();
-        if (!sid || !code) return;
+    async function parentLogin(e) {
+        e.preventDefault();
+        const errEl = document.getElementById('p-error');
+        errEl.style.display = 'none';
         try {
-            const res = await fetch(`${API}/api/parent/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({student_id:sid, parent_code:code}) });
+            const res = await fetch('/api/parent/login', {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ student_id: document.getElementById('p-student-id').value, parent_code: document.getElementById('p-code').value })
+            });
             const data = await res.json();
-            if (!res.ok) { document.getElementById('p-error').style.display='block'; document.getElementById('p-error').textContent=data.error; return; }
-            parentToken = data.token;
-            localStorage.setItem('parent_token', parentToken);
-            localStorage.setItem('parent_student_name', data.student_name);
-            localStorage.setItem('parent_name', data.parent_name);
-            loadReport();
-        } catch(e) { alert('เกิดข้อผิดพลาด'); }
+            if (data.success) {
+                PARENT_CHILD = data.student;
+                localStorage.setItem('parentChild', JSON.stringify(PARENT_CHILD));
+                showParentDashboard();
+            } else { errEl.textContent = data.error; errEl.style.display = 'block'; }
+        } catch(err) { errEl.textContent = 'เชื่อมต่อไม่ได้'; errEl.style.display = 'block'; }
     }
 
-    async function loadReport() {
-        document.getElementById('parent-login').style.display='none';
-        document.getElementById('parent-dashboard').style.display='block';
+    function parentLogout() { localStorage.removeItem('parentChild'); location.reload(); }
+
+    async function showParentDashboard() {
+        document.getElementById('parent-login').style.display = 'none';
+        document.getElementById('parent-dashboard').style.display = 'block';
+        document.getElementById('child-name').textContent = '👧 ' + PARENT_CHILD.name;
         try {
-            const res = await fetch(`${API}/api/parent/child-report`, { headers:{'x-parent-token':parentToken} });
-            if (!res.ok) { parentLogout(); return; }
+            const res = await fetch('/api/parent/child/' + PARENT_CHILD.id);
             const data = await res.json();
-            document.getElementById('p-info').textContent = `นักเรียน: ${data.student.name} | ห้อง: ${data.student.classroom||'-'}`;
-            document.getElementById('rp-exp').textContent = data.stats.exp || 0;
-            document.getElementById('rp-level').textContent = data.stats.level || 1;
-            document.getElementById('rp-quizzes').textContent = data.quizResults.length;
-            document.getElementById('rp-attendance').textContent = data.attendance.filter(a=>a.status==='present').length;
-            // Badges
-            const badges = JSON.parse(data.stats.badges || '[]');
-            document.getElementById('rp-badges').innerHTML = badges.length ? badges.map(b=>`<span class="badge-item">${b}</span>`).join('') : '<p style="color:var(--text-muted);">ยังไม่มี</p>';
-            // Quiz results
-            document.getElementById('rp-quiz-table').innerHTML = data.quizResults.length ?
-                data.quizResults.map(q => `<tr><td>${q.title}</td><td>${q.score}/${q.total}</td><td>${Math.round(q.score/q.total*100)}%</td><td>${new Date(q.submitted_at).toLocaleDateString('th-TH')}</td></tr>`).join('') :
-                '<tr><td colspan="4" style="color:var(--text-muted);">ยังไม่มีผลสอบ</td></tr>';
+            const qr = data.quizResults || [];
+            const avg = qr.length ? Math.round(qr.reduce(function(s,r){ return s + (r.score_percent || Math.round(r.score/r.total*100)); }, 0) / qr.length) : 0;
+            document.getElementById('pc-quizzes').textContent = qr.length;
+            document.getElementById('pc-avg').textContent = avg + '%';
+            document.getElementById('pc-attendance').textContent = (data.attendance || []).length;
+            document.getElementById('pc-homework').textContent = (data.homework || []).filter(function(h){ return h.status === 'submitted' || h.status === 'graded'; }).length;
+            // Quiz list
+            document.getElementById('pc-quiz-list').innerHTML = qr.length ? qr.map(function(r){
+                var pct = r.score_percent || Math.round(r.score/r.total*100);
+                return '<div class="data-row"><span>'+r.title+'</span><span style="font-weight:700;color:'+(pct>=70?'#10b981':'#ef4444')+';">'+r.score+'/'+r.total+' ('+pct+'%)</span></div>';
+            }).join('') : '<p style="color:var(--text-muted);">ยังไม่มีผลสอบ</p>';
             // Attendance
-            document.getElementById('rp-att-table').innerHTML = data.attendance.length ?
-                data.attendance.map(a => `<tr><td>${new Date(a.date).toLocaleDateString('th-TH')}</td><td class="status-${a.status}">${a.status==='present'?'มาเรียน':a.status==='late'?'สาย':'ขาด'}</td></tr>`).join('') :
-                '<tr><td colspan="2" style="color:var(--text-muted);">ยังไม่มีข้อมูล</td></tr>';
+            document.getElementById('pc-attendance-list').innerHTML = (data.attendance || []).map(function(a){
+                return '<div class="data-row"><span>📅 '+a.check_date+'</span><span>⏰ '+a.check_time+'</span></div>';
+            }).join('') || '<p style="color:var(--text-muted);">ยังไม่มีข้อมูล</p>';
+            // Homework
+            document.getElementById('pc-homework-list').innerHTML = (data.homework || []).map(function(h){
+                var statusText = h.status==='graded'?'✅ ตรวจแล้ว: '+h.grade+'/'+h.total:h.status==='submitted'?'📤 ส่งแล้ว':'⏰ รอส่ง';
+                var statusColor = h.status==='graded'?'#3b82f6':h.status==='submitted'?'#10b981':'#f59e0b';
+                return '<div class="data-row"><div><strong>'+h.title+'</strong><br><span style="font-size:0.8rem;color:'+statusColor+';">'+statusText+'</span></div><span style="color:var(--text-muted);font-size:0.8rem;">'+h.due_date+'</span></div>';
+            }).join('') || '<p style="color:var(--text-muted);">ไม่มีการบ้าน</p>';
         } catch(e) { console.error(e); }
     }
 
-    function parentLogout() {
-        localStorage.removeItem('parent_token');
-        parentToken = null;
-        document.getElementById('parent-login').style.display='block';
-        document.getElementById('parent-dashboard').style.display='none';
-    }
-    if (localStorage.getItem('theme') === 'light') document.documentElement.setAttribute('data-theme', 'light');
+    var saved = JSON.parse(localStorage.getItem('parentChild') || 'null');
+    if (saved) { PARENT_CHILD = saved; showParentDashboard(); }
     </script>
-    <script src="i18n.js"></script>
 </body>
 </html>

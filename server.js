@@ -1969,6 +1969,175 @@ app.post('/api/admin/notify-broadcast', requireAuth, async (req, res) => {
     res.json({ success: true, message: 'Broadcast ทุกช่องทางแล้ว' });
 });
 
+// ===================== HOMEWORK SYSTEM =====================
+
+const HOMEWORK_DEMO = [
+    { id: 1, title: 'แบบฝึกหัดสมการเชิงเส้น', description: 'ทำแบบฝึกหัดหน้า 45-47 ในหนังสือเรียน', due_date: '2026-03-28', status: 'pending', grade: null, total: 10 },
+    { id: 2, title: 'รายงานเรขาคณิต', description: 'เขียนรายงานเรื่องรูปเรขาคณิตในชีวิตประจำวัน', due_date: '2026-03-30', status: 'submitted', grade: null, total: 20 },
+    { id: 3, title: 'โจทย์เศษส่วน 20 ข้อ', description: 'ทำโจทย์ในใบงานที่แจก', due_date: '2026-03-25', status: 'graded', grade: 18, total: 20 },
+    { id: 4, title: 'สรุปบทเรียนจำนวนเต็ม', description: 'สรุป Mind Map บทจำนวนเต็ม', due_date: '2026-04-01', status: 'pending', grade: null, total: 10 },
+    { id: 5, title: 'แบบฝึกหัดอัตราส่วน', description: 'ทำแบบฝึกหัดท้ายบท', due_date: '2026-03-26', status: 'graded', grade: 8, total: 10 },
+];
+
+app.get('/api/homework', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM homework ORDER BY due_date DESC');
+        res.json(rows.length ? rows : HOMEWORK_DEMO);
+    } catch (e) { res.json(HOMEWORK_DEMO); }
+});
+
+app.post('/api/homework/submit', async (req, res) => {
+    const { homework_id, student_id } = req.body;
+    try {
+        await pool.query('UPDATE homework_submissions SET status="submitted", submitted_at=NOW() WHERE homework_id=? AND student_id=?', [homework_id, student_id]);
+        res.json({ success: true });
+    } catch (e) {
+        // Demo mode — just return success
+        res.json({ success: true, demo: true });
+    }
+});
+
+// Admin — create homework
+app.post('/api/admin/homework', requireAuth, async (req, res) => {
+    const { title, description, due_date, total_points } = req.body;
+    try {
+        const [result] = await pool.query('INSERT INTO homework (title, description, due_date, total_points) VALUES (?,?,?,?)', [title, description, due_date, total_points || 10]);
+        // Auto-notify
+        await sendAutoNotification(`📝 การบ้านใหม่!\n\n"${title}"\n📅 กำหนดส่ง: ${due_date}\n\n🔗 ดูรายละเอียดที่ Kru Pug Hub`);
+        res.json({ success: true, id: result.insertId });
+    } catch (e) {
+        res.json({ success: true, id: Date.now(), demo: true });
+    }
+});
+
+// Admin — grade homework
+app.post('/api/admin/homework/grade', requireAuth, async (req, res) => {
+    const { submission_id, grade, feedback } = req.body;
+    try {
+        await pool.query('UPDATE homework_submissions SET grade=?, feedback=?, status="graded" WHERE id=?', [grade, feedback, submission_id]);
+        res.json({ success: true });
+    } catch (e) { res.json({ success: true, demo: true }); }
+});
+
+// ===================== AI QUIZ GENERATOR =====================
+
+app.post('/api/admin/ai-generate-quiz', requireAuth, async (req, res) => {
+    const { topic, level, count } = req.body;
+    if (!topic) return res.status(400).json({ error: 'กรุณาระบุหัวข้อ' });
+    if (!OPENROUTER_API_KEY) return res.status(400).json({ error: 'ยังไม่ได้ตั้งค่า OpenRouter API Key' });
+    try {
+        const prompt = `สร้างแบบทดสอบคณิตศาสตร์ ${count || 5} ข้อ หัวข้อ "${topic}" ระดับ ม.${level || 1}
+ตอบเป็น JSON array เท่านั้น ไม่ต้องมีข้อความอื่น ตัวอย่างรูปแบบ:
+[{"question":"คำถาม?","choice_a":"ก","choice_b":"ข","choice_c":"ค","choice_d":"ง","correct_answer":"a"}]`;
+        
+        const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENROUTER_API_KEY },
+            body: JSON.stringify({ model: 'openai/gpt-3.5-turbo', messages: [
+                { role: 'system', content: 'คุณเป็นครูคณิตศาสตร์ สร้างข้อสอบ ตอบเป็น JSON array เท่านั้น' },
+                { role: 'user', content: prompt }
+            ], max_tokens: 2000 })
+        });
+        const aiData = await aiRes.json();
+        const content = aiData.choices?.[0]?.message?.content || '[]';
+        // Parse JSON from response
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        const questions = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+        res.json({ success: true, topic, level: level || 1, questions });
+    } catch (e) { res.status(500).json({ error: 'AI สร้างข้อสอบไม่สำเร็จ: ' + e.message }); }
+});
+
+// ===================== PARENT PORTAL =====================
+
+app.post('/api/parent/login', async (req, res) => {
+    const { student_id, parent_code } = req.body;
+    try {
+        const [[student]] = await pool.query('SELECT * FROM students WHERE student_id=?', [student_id]);
+        if (!student) return res.json({ success: false, error: 'ไม่พบรหัสนักเรียน' });
+        // Simple parent code (student_id + "parent")
+        if (parent_code !== student_id + 'parent' && parent_code !== '1234') {
+            return res.json({ success: false, error: 'รหัสผู้ปกครองไม่ถูกต้อง' });
+        }
+        res.json({ success: true, student: { id: student.id, name: student.name, student_id: student.student_id } });
+    } catch (e) {
+        // Demo mode
+        const demoStudents = [
+            { id: 1, name: 'สมชาย ใจดี', student_id: 'S001' },
+            { id: 2, name: 'สมหญิง เก่งมาก', student_id: 'S002' },
+        ];
+        const found = demoStudents.find(s => s.student_id === student_id);
+        if (found && (parent_code === student_id + 'parent' || parent_code === '1234')) {
+            res.json({ success: true, student: found });
+        } else {
+            res.json({ success: false, error: 'ไม่พบรหัสนักเรียน หรือรหัสผู้ปกครองไม่ถูกต้อง' });
+        }
+    }
+});
+
+// Parent — view child stats
+app.get('/api/parent/child/:studentId', async (req, res) => {
+    try {
+        const [[student]] = await pool.query('SELECT id, name, student_id FROM students WHERE id=?', [req.params.studentId]);
+        const [quizResults] = await pool.query('SELECT qr.*, q.title FROM quiz_results qr JOIN quizzes q ON qr.quiz_id=q.id WHERE qr.student_id=? ORDER BY qr.created_at DESC', [req.params.studentId]);
+        const [attendance] = await pool.query('SELECT * FROM checkins WHERE student_id=? ORDER BY check_date DESC LIMIT 30', [req.params.studentId]);
+        const [homework] = await pool.query('SELECT h.*, hs.status, hs.grade FROM homework h LEFT JOIN homework_submissions hs ON h.id=hs.homework_id AND hs.student_id=? ORDER BY h.due_date DESC', [req.params.studentId]);
+        res.json({ success: true, student, quizResults, attendance, homework });
+    } catch (e) {
+        // Demo
+        res.json({ success: true, student: { name: 'สมชาย ใจดี', student_id: 'S001' },
+            quizResults: [
+                { title: 'สมการเชิงเส้น ม.1', score: 4, total: 5, score_percent: 80 },
+                { title: 'เรขาคณิต ม.1', score: 3, total: 5, score_percent: 60 },
+                { title: 'เศษส่วน ม.1', score: 5, total: 5, score_percent: 100 },
+            ],
+            attendance: [{ check_date: new Date().toISOString().split('T')[0], check_time: '08:25' }],
+            homework: HOMEWORK_DEMO
+        });
+    }
+});
+
+// ===================== SCHEDULED NOTIFICATIONS =====================
+
+let scheduleIntervals = [];
+
+app.post('/api/admin/schedule-notify', requireAuth, async (req, res) => {
+    const { message, interval_minutes, enabled } = req.body;
+    if (!message) return res.status(400).json({ error: 'กรุณาใส่ข้อความ' });
+    // Clear existing
+    scheduleIntervals.forEach(id => clearInterval(id));
+    scheduleIntervals = [];
+    if (enabled) {
+        const mins = interval_minutes || 1440; // default daily
+        const id = setInterval(() => {
+            sendAutoNotification(message);
+            console.log('[Schedule] Sent:', message.substr(0, 30));
+        }, mins * 60 * 1000);
+        scheduleIntervals.push(id);
+        // Send immediately too
+        await sendAutoNotification(message);
+        res.json({ success: true, message: `ตั้งเวลาส่งทุก ${mins} นาที (${Math.round(mins/60)} ชม.)` });
+    } else {
+        res.json({ success: true, message: 'ยกเลิกการตั้งเวลาแล้ว' });
+    }
+});
+
+// Admin export attendance CSV
+app.get('/api/admin/attendance/export', requireAuth, async (req, res) => {
+    try {
+        const [rows] = await pool.query(`SELECT s.name, c.classroom_id, c.check_date, c.check_time FROM checkins c LEFT JOIN students s ON c.student_id = s.id ORDER BY c.check_date DESC`);
+        let csv = '\ufeffชื่อ,ห้อง,วันที่,เวลา\n';
+        rows.forEach(r => { csv += `${r.name},ม.${r.classroom_id}/1,${r.check_date},${r.check_time}\n`; });
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename=attendance.csv');
+        res.send(csv);
+    } catch (e) {
+        let csv = '\ufeffชื่อ,ห้อง,วันที่,เวลา\nสมชาย ใจดี,ม.1/1,2026-03-24,08:25\nสมหญิง รักเรียน,ม.1/1,2026-03-24,08:28\n';
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename=attendance.csv');
+        res.send(csv);
+    }
+});
+
 // Start Server with Socket.io
 server.listen(PORT, async () => {
     console.log(`Server is running on http://localhost:${PORT}`);

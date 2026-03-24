@@ -1006,3 +1006,80 @@ async function createRichMenu() {
         result.textContent = data.success ? '✅ ' + data.message : '❌ ' + (data.error || 'เกิดข้อผิดพลาด');
     } catch(e) { result.style.display='block'; result.style.background='rgba(239,68,68,0.2)'; result.textContent='❌ '+e.message; }
 }
+
+// ===================== HOMEWORK MANAGER =====================
+
+async function createHomework() {
+    const TOKEN = localStorage.getItem('admin_token');
+    const title = document.getElementById('hw-title').value.trim();
+    const desc = document.getElementById('hw-desc').value.trim();
+    const due = document.getElementById('hw-due').value;
+    const points = document.getElementById('hw-points').value;
+    const result = document.getElementById('hw-result');
+    if (!title || !due) return alert('กรุณากรอกชื่อการบ้านและกำหนดส่ง');
+    try {
+        const res = await fetch('/api/admin/homework', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN },
+            body: JSON.stringify({ title, description: desc, due_date: due, total_points: parseInt(points) || 10 })
+        });
+        const data = await res.json();
+        result.style.display = 'block';
+        result.style.background = 'rgba(168,85,247,0.2)';
+        result.textContent = data.success ? '✅ สั่งการบ้าน + ส่งแจ้งเตือนแล้ว!' : '❌ เกิดข้อผิดพลาด';
+        if (data.success) { document.getElementById('hw-title').value = ''; document.getElementById('hw-desc').value = ''; }
+    } catch(e) { result.style.display='block'; result.style.background='rgba(239,68,68,0.2)'; result.textContent='❌ '+e.message; }
+}
+
+// ===================== AI QUIZ GENERATOR =====================
+
+async function generateAIQuiz() {
+    const TOKEN = localStorage.getItem('admin_token');
+    const topic = document.getElementById('ai-topic').value.trim();
+    const level = document.getElementById('ai-level').value;
+    const count = document.getElementById('ai-count').value;
+    const result = document.getElementById('ai-quiz-result');
+    if (!topic) return alert('กรุณาใส่หัวข้อ');
+    result.style.display = 'block';
+    result.innerHTML = '<div style="text-align:center;padding:20px;"><i class="fa-solid fa-spinner fa-spin" style="font-size:2rem;color:#ec4899;"></i><p>🤖 AI กำลังสร้างข้อสอบ...</p></div>';
+    try {
+        const res = await fetch('/api/admin/ai-generate-quiz', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN },
+            body: JSON.stringify({ topic, level: parseInt(level), count: parseInt(count) || 5 })
+        });
+        const data = await res.json();
+        if (data.success && data.questions?.length) {
+            result.innerHTML = '<div style="background:rgba(236,72,153,0.15);padding:12px;border-radius:10px;margin-bottom:12px;"><strong>✅ สร้าง ' + data.questions.length + ' ข้อ หัวข้อ "' + data.topic + '" ม.' + data.level + '</strong></div>' +
+                data.questions.map(function(q, i) {
+                    return '<div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:12px;margin-bottom:8px;font-size:0.85rem;">' +
+                        '<strong>ข้อ ' + (i+1) + ':</strong> ' + q.question + '<br>' +
+                        '<span style="color:var(--text-muted);">ก.' + q.choice_a + '  ข.' + q.choice_b + '  ค.' + q.choice_c + '  ง.' + q.choice_d + '</span><br>' +
+                        '<span style="color:#10b981;">✅ เฉลย: ' + q.correct_answer.toUpperCase() + '</span></div>';
+                }).join('');
+        } else {
+            result.innerHTML = '<div style="background:rgba(239,68,68,0.2);padding:12px;border-radius:8px;">❌ ' + (data.error || 'ไม่สามารถสร้างข้อสอบได้') + '</div>';
+        }
+    } catch(e) { result.innerHTML = '<div style="background:rgba(239,68,68,0.2);padding:12px;border-radius:8px;">❌ ' + e.message + '</div>'; }
+}
+
+// ===================== SCHEDULE NOTIFICATIONS =====================
+
+async function toggleSchedule(enabled) {
+    const TOKEN = localStorage.getItem('admin_token');
+    const msg = document.getElementById('schedule-msg').value.trim();
+    const interval = document.getElementById('schedule-interval').value;
+    const result = document.getElementById('schedule-result');
+    if (enabled && !msg) return alert('กรุณาใส่ข้อความ');
+    try {
+        const res = await fetch('/api/admin/schedule-notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN },
+            body: JSON.stringify({ message: msg || 'test', interval_minutes: parseInt(interval), enabled })
+        });
+        const data = await res.json();
+        result.style.display = 'block';
+        result.style.background = enabled ? 'rgba(245,158,11,0.2)' : 'rgba(107,114,128,0.2)';
+        result.textContent = data.success ? (enabled ? '⏰ ' : '⏹️ ') + data.message : '❌ ' + (data.error || 'เกิดข้อผิดพลาด');
+    } catch(e) { result.style.display='block'; result.style.background='rgba(239,68,68,0.2)'; result.textContent='❌ '+e.message; }
+}

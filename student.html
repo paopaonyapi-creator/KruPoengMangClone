@@ -114,6 +114,8 @@
                 <button onclick="switchStudentTab('chat',this)">💬 <span data-i18n="nav_chat">ห้องแชท</span></button>
                 <button onclick="switchStudentTab('leaderboard',this)">🏆 <span data-i18n="nav_ranking">อันดับ</span></button>
                 <button onclick="switchStudentTab('history',this)">📋 <span data-i18n="nav_history">ประวัติ</span></button>
+                <button onclick="switchStudentTab('progress',this)">📈 ความก้าวหน้า</button>
+                <button onclick="switchStudentTab('homework',this)">📝 การบ้าน</button>
                 <button onclick="switchStudentTab('settings',this)">⚙️ <span data-i18n="nav_settings">ตั้งค่า</span></button>
             </div>
 
@@ -217,6 +219,31 @@
                     <div class="badge-progress-bar"><div class="badge-progress-fill" id="badge-fill" style="width:0%"></div></div>
                     <div class="badge-list" id="analytics-badges"></div>
                 </div>
+            </div>
+
+            <!-- Progress Dashboard Panel -->
+            <div id="stu-progress" class="stu-panel">
+                <h3 style="margin-bottom:16px;">📈 ความก้าวหน้าของฉัน</h3>
+                <div class="stat-cards" style="margin-bottom:16px;">
+                    <div class="stat-card"><div class="val" id="progress-avg" style="color:#10b981;">-</div><div class="lbl">คะแนนเฉลี่ย</div></div>
+                    <div class="stat-card"><div class="val" id="progress-total" style="color:#3b82f6;">-</div><div class="lbl">ทำแบบทดสอบ</div></div>
+                </div>
+                <div class="analytics-chart" style="margin-bottom:16px;"><canvas id="progress-chart" height="200"></canvas></div>
+                <div class="glass-card" style="padding:14px;margin-bottom:12px;">
+                    <h4 style="margin:0 0 8px;">💪 จุดแข็ง</h4>
+                    <div id="progress-strengths" class="badge-list"></div>
+                </div>
+                <div class="glass-card" style="padding:14px;margin-bottom:16px;">
+                    <h4 style="margin:0 0 8px;">🎯 ควรทบทวน</h4>
+                    <div id="progress-weaknesses" class="badge-list"></div>
+                </div>
+                <button class="btn-glow btn-full" onclick="exportProgressCSV()"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+            </div>
+
+            <!-- Homework Panel -->
+            <div id="stu-homework" class="stu-panel">
+                <h3 style="margin-bottom:16px;">📝 การบ้านของฉัน</h3>
+                <div id="homework-list"><p style="color:var(--text-muted);text-align:center;">กำลังโหลด...</p></div>
             </div>
         </div>
     </div>
@@ -587,7 +614,84 @@
     window.switchStudentTab = function(tab, btn) {
         origSwitch(tab, btn);
         if (tab === 'analytics') loadSelfAnalytics();
+        if (tab === 'progress') loadProgress();
+        if (tab === 'homework') loadHomework();
     };
+
+    // ========== PROGRESS DASHBOARD ==========
+    let progressChart = null;
+    async function loadProgress() {
+        try {
+            const res = await fetch(`/api/student/progress/${STUDENT.id}`);
+            const { data, summary } = await res.json();
+            // Render strengths/weaknesses
+            document.getElementById('progress-avg').textContent = (summary?.average || 80) + '%';
+            document.getElementById('progress-total').textContent = (summary?.total_quizzes || data?.length || 0) + ' ชุด';
+            const sEl = document.getElementById('progress-strengths');
+            const wEl = document.getElementById('progress-weaknesses');
+            sEl.innerHTML = (summary?.strengths || []).map(s => `<span class="badge" style="background:rgba(16,185,129,0.2);color:#10b981;">💪 ${s}</span>`).join('') || '<span style="color:var(--text-muted)">ยังไม่มีข้อมูล</span>';
+            wEl.innerHTML = (summary?.weaknesses || []).map(w => `<span class="badge" style="background:rgba(239,68,68,0.2);color:#ef4444;">🎯 ${w}</span>`).join('') || '<span style="color:var(--text-muted)">เยี่ยม! ไม่มีจุดอ่อน</span>';
+            // Bar chart
+            const ctx = document.getElementById('progress-chart').getContext('2d');
+            if (progressChart) progressChart.destroy();
+            progressChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: (data || []).map(d => d.quiz_title?.replace(/ ม\.\d/,'') || 'Quiz'),
+                    datasets: [{ label: 'คะแนน (%)', data: (data || []).map(d => d.score_percent), backgroundColor: (data || []).map(d => d.score_percent >= 80 ? 'rgba(16,185,129,0.7)' : d.score_percent >= 60 ? 'rgba(245,158,11,0.7)' : 'rgba(239,68,68,0.7)'), borderRadius: 8 }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }
+            });
+        } catch(e) { console.error(e); }
+    }
+
+    // Export CSV
+    window.exportProgressCSV = function() {
+        const rows = [['Quiz','Score','Total','Percent','Date']];
+        document.querySelectorAll('#progress-list tr').forEach(tr => {
+            const cells = Array.from(tr.querySelectorAll('td')).map(td => td.textContent);
+            if (cells.length) rows.push(cells);
+        });
+        const csv = rows.map(r => r.join(',')).join('\n');
+        const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'progress_report.csv'; a.click();
+    };
+
+    // ========== HOMEWORK SYSTEM ==========
+    async function loadHomework() {
+        try {
+            const res = await fetch(`/api/homework?student_id=${STUDENT.id}`);
+            const data = await res.json();
+            const list = document.getElementById('homework-list');
+            list.innerHTML = (data || []).map(hw => `
+                <div class="glass-card" style="padding:14px;margin-bottom:10px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <h4 style="margin:0;">${hw.title}</h4>
+                            <p style="color:var(--text-muted);font-size:0.8rem;margin:4px 0;">${hw.description || ''}</p>
+                            <span style="font-size:0.75rem;color:${hw.status==='submitted'?'#10b981':hw.status==='graded'?'#3b82f6':'#f59e0b'};">
+                                ${hw.status==='submitted'?'✅ ส่งแล้ว':hw.status==='graded'?'📊 ตรวจแล้ว: '+hw.grade+'/'+hw.total:'⏰ กำหนดส่ง: '+hw.due_date}
+                            </span>
+                        </div>
+                        ${hw.status==='pending'?`<button class="btn-glow" style="padding:8px 16px;" onclick="submitHomework(${hw.id})"><i class="fa-solid fa-paper-plane"></i> ส่ง</button>`:''}
+                    </div>
+                </div>
+            `).join('') || '<p style="color:var(--text-muted);text-align:center;">🎉 ไม่มีการบ้าน!</p>';
+        } catch(e) { console.error(e); }
+    }
+
+    async function submitHomework(id) {
+        if (!confirm('ยืนยันส่งการบ้าน?')) return;
+        try {
+            const res = await fetch('/api/homework/submit', {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ homework_id: id, student_id: STUDENT.id })
+            });
+            const data = await res.json();
+            alert(data.success ? '✅ ส่งการบ้านสำเร็จ!' : '❌ ' + (data.error || 'เกิดข้อผิดพลาด'));
+            loadHomework();
+        } catch(e) { alert('เกิดข้อผิดพลาด'); }
+    }
     </script>
 </body>
 </html>
