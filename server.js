@@ -1827,6 +1827,12 @@ async function autoMigrate() {
         try { await conn.query('ALTER TABLE notifications ADD COLUMN target_classroom_id INT DEFAULT NULL'); } catch (e) { }
         try { await conn.query('ALTER TABLE classrooms ADD COLUMN teacher_id INT DEFAULT NULL'); } catch (e) { }
         try { await conn.query('ALTER TABLE schedule_events ADD COLUMN meeting_url TEXT DEFAULT NULL'); } catch (e) { }
+        // Sprint 5 tables
+        await conn.query(`CREATE TABLE IF NOT EXISTS homework (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), description TEXT, due_date DATE, total_points INT DEFAULT 10, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS homework_submissions (id INT AUTO_INCREMENT PRIMARY KEY, homework_id INT, student_id INT, status ENUM('pending','submitted','graded') DEFAULT 'pending', grade INT DEFAULT NULL, feedback TEXT, submitted_at TIMESTAMP DEFAULT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        try { await conn.query('ALTER TABLE quiz_results ADD COLUMN student_id INT DEFAULT NULL'); } catch (e) { }
+        try { await conn.query('ALTER TABLE checkins RENAME TO checkins_old'); } catch (e) { }
+        await conn.query(`CREATE TABLE IF NOT EXISTS checkins (id INT AUTO_INCREMENT PRIMARY KEY, student_id INT, classroom_id INT, check_date DATE, check_time VARCHAR(10), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         console.log('Auto-migration complete!');
     } catch (e) { console.error('Migration error:', e.message); }
 }
