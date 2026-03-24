@@ -1,12 +1,24 @@
-const TOKEN = localStorage.getItem('adminToken');
+let TOKEN = localStorage.getItem('adminToken');
 let questionCounter = 0;
 
 // Auth check
 (async () => {
     try {
         const res = await fetch('/api/auth/check', { headers: { 'x-admin-token': TOKEN } });
-        if (!res.ok) { window.location.href = 'index.html'; return; }
-    } catch { window.location.href = 'index.html'; return; }
+        if (!res.ok) { showAdminLogin(); return; }
+    } catch { showAdminLogin(); return; }
+    showAdminDashboard();
+})();
+
+function showAdminLogin() {
+    document.getElementById('admin-login-page').style.display = 'block';
+    document.getElementById('admin-body').style.display = 'none';
+}
+
+function showAdminDashboard() {
+    document.getElementById('admin-login-page').style.display = 'none';
+    document.getElementById('admin-body').style.display = 'block';
+    if (document.getElementById('admin-floating-utils')) document.getElementById('admin-floating-utils').style.display = 'none';
     loadDashboard();
     loadAllTables();
     loadClassrooms();
@@ -14,9 +26,32 @@ let questionCounter = 0;
     document.getElementById('att-date').value = new Date().toISOString().split('T')[0];
     loadStudentCount();
     loadApiKeyStatus();
-})();
+    loadTelegramStatus();
+}
 
-function logout() { localStorage.removeItem('adminToken'); window.location.href = 'index.html'; }
+async function adminPageLogin() {
+    const pass = document.getElementById('admin-login-pass').value;
+    if (!pass) return;
+    try {
+        const response = await fetch('/api/auth/login', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: pass })
+        });
+        const data = await response.json();
+        if (data.success) {
+            TOKEN = data.token;
+            localStorage.setItem('adminToken', data.token);
+            showAdminDashboard();
+        } else {
+            document.getElementById('admin-login-error').style.display = 'block';
+        }
+    } catch (err) {
+        document.getElementById('admin-login-error').style.display = 'block';
+        document.getElementById('admin-login-error').textContent = 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+    }
+}
+
+function logout() { localStorage.removeItem('adminToken'); TOKEN = null; showAdminLogin(); }
 
 function switchTab(tabId, btn) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -814,3 +849,34 @@ async function populateParentStudents() {
 
 // Auto-load parent students list
 setTimeout(populateParentStudents, 1500);
+
+// ===================== PHASE 6: TELEGRAM BOT =====================
+
+async function loadTelegramStatus() {
+    try {
+        const res = await fetch('/api/admin/telegram', { headers: { 'x-admin-token': TOKEN } });
+        const data = await res.json();
+        const el = document.getElementById('tg-status');
+        if (el) el.innerHTML = data.hasToken ? `<span style="color:#0088cc;">✅ Bot: ${data.bot_token} | Chat: ${data.chat_id}</span>` : '<span style="color:#ef4444;">❌ ยังไม่ได้ตั้งค่า</span>';
+    } catch(e) {}
+}
+
+async function saveTelegram() {
+    const bot_token = document.getElementById('tg-bot-token').value.trim();
+    const chat_id = document.getElementById('tg-chat-id').value.trim();
+    if (!bot_token || !chat_id) return alert('กรุณาใส่ Bot Token และ Chat ID');
+    const res = await apiPost('/api/admin/telegram', { bot_token, chat_id });
+    if (res.success) { alert('บันทึก Telegram สำเร็จ!'); loadTelegramStatus(); document.getElementById('tg-bot-token').value = ''; document.getElementById('tg-chat-id').value = ''; }
+    else alert(res.error || 'เกิดข้อผิดพลาด');
+}
+
+async function testTelegram() {
+    const bot_token = document.getElementById('tg-bot-token').value.trim();
+    const chat_id = document.getElementById('tg-chat-id').value.trim();
+    const el = document.getElementById('tg-result');
+    el.style.display = 'block';
+    el.innerHTML = '⏳ กำลังทดสอบ...';
+    const res = await apiPost('/api/admin/telegram/test', { bot_token: bot_token || undefined, chat_id: chat_id || undefined });
+    el.style.background = res.success ? 'rgba(0,136,204,0.15)' : 'rgba(239,68,68,0.15)';
+    el.innerHTML = res.success ? `✅ ${res.message}` : `❌ ${res.message || res.error}`;
+}

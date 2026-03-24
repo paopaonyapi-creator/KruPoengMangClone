@@ -42,12 +42,31 @@
 <body>
     <div class="dynamic-bg"><div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div></div>
 
-    <div class="admin-body">
+    <!-- Floating Utils -->
+    <div class="floating-utils" id="admin-floating-utils">
+        <button onclick="const c=document.documentElement.getAttribute('data-theme')||'dark';const n=c==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);localStorage.setItem('theme',n);this.textContent=n==='light'?'☀️':'🌙'">🌙</button>
+        <button class="lang-toggle-btn" onclick="toggleKrupugLang()">🇹🇭</button>
+    </div>
+
+    <!-- Admin Login (shown when not authenticated) -->
+    <div id="admin-login-page" style="display:none;">
+        <div class="login-card glass-card" style="max-width:420px;margin:100px auto;text-align:center;padding:40px;">
+            <div style="font-size:3rem;margin-bottom:16px;">🔒</div>
+            <h2>ระบบจัดการ (Admin)</h2>
+            <p style="color:var(--text-muted);margin-bottom:24px;">กรอกรหัสผ่านเพื่อเข้าสู่ระบบ</p>
+            <div class="form-group"><input type="password" class="glass-input" id="admin-login-pass" placeholder="รหัสผ่าน" onkeypress="if(event.key==='Enter')adminPageLogin()"></div>
+            <button class="btn-glow btn-full" onclick="adminPageLogin()"><i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ</button>
+            <p id="admin-login-error" style="color:#ef4444;display:none;margin-top:12px;">รหัสผ่านไม่ถูกต้อง</p>
+            <a href="index.html" style="color:var(--text-muted);display:block;margin-top:16px;">← กลับหน้าหลัก</a>
+        </div>
+    </div>
+
+    <div class="admin-body" id="admin-body" style="display:none;">
         <div class="admin-header">
-            <h1><i class="fa-solid fa-lock" style="color:#ef4444;"></i> ระบบจัดการ (Admin)</h1>
+            <h1><i class="fa-solid fa-lock" style="color:#ef4444;"></i> <span data-i18n="admin_title">ระบบจัดการ (Admin)</span></h1>
             <div>
-                <a href="index.html" class="btn-outline" style="text-decoration:none;"><i class="fa-solid fa-arrow-left"></i> กลับหน้าเว็บ</a>
-                <button class="btn-outline" style="border-color:#ef4444;color:#ef4444;margin-left:8px;" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</button>
+                <a href="index.html" class="btn-outline" style="text-decoration:none;"><i class="fa-solid fa-arrow-left"></i> <span data-i18n="admin_back">กลับหน้าเว็บ</span></a>
+                <button class="btn-outline" style="border-color:#ef4444;color:#ef4444;margin-left:8px;" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="admin_logout">ออกจากระบบ</span></button>
             </div>
         </div>
 
@@ -363,9 +382,34 @@
 
                 <div id="api-key-result" style="display:none;padding:12px;border-radius:8px;font-size:0.9rem;"></div>
             </div>
+
+            <!-- Telegram Bot Management -->
+            <div class="glass-card" style="margin-top:24px;max-width:600px;">
+                <h3><i class="fa-brands fa-telegram" style="color:#0088cc;"></i> Telegram Bot แจ้งเตือน</h3>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">ส่งแจ้งเตือนผ่าน Telegram เมื่อมีข้อสอบใหม่ หรือประกาศ</p>
+                <div class="form-group">
+                    <label>สถานะ</label>
+                    <div id="tg-status" style="padding:10px;border-radius:8px;background:rgba(0,0,0,0.2);font-family:monospace;font-size:0.85rem;color:var(--text-muted);">กำลังโหลด...</div>
+                </div>
+                <div class="form-group">
+                    <label>Bot Token</label>
+                    <input type="password" class="glass-input" id="tg-bot-token" placeholder="123456:ABCdefGHIjklMNO..." style="font-family:monospace;">
+                </div>
+                <div class="form-group">
+                    <label>Chat ID (กลุ่มหรือส่วนตัว)</label>
+                    <input type="text" class="glass-input" id="tg-chat-id" placeholder="-1001234567890" style="font-family:monospace;">
+                </div>
+                <div style="display:flex;gap:8px;margin-bottom:16px;">
+                    <button class="btn-glow" style="flex:1;background:#0088cc;" onclick="saveTelegram()"><i class="fa-solid fa-floppy-disk"></i> บันทึก</button>
+                    <button class="btn-glow" style="flex:1;background:#3b82f6;" onclick="testTelegram()"><i class="fa-solid fa-flask"></i> ทดสอบ</button>
+                </div>
+                <div id="tg-result" style="display:none;padding:12px;border-radius:8px;font-size:0.9rem;"></div>
+            </div>
         </div>
     </div>
 
+    <script>if(localStorage.getItem('theme')==='light')document.documentElement.setAttribute('data-theme','light');</script>
+    <script src="i18n.js"></script>
     <script src="admin.js"></script>
 </body>
 </html>

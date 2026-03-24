@@ -260,3 +260,28 @@ button { font-family: inherit; cursor: pointer; border: none; outline: none; bor
     .ai-chat-panel { width: 90vw; right: 5vw; height: 50vh; }
 }
 
+/* Floating utility bar for login pages */
+.floating-utils {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 8px;
+    z-index: 1000;
+}
+.floating-utils button {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-main);
+    padding: 8px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    backdrop-filter: blur(10px);
+    transition: var(--transition);
+}
+.floating-utils button:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}

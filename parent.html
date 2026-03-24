@@ -26,22 +26,29 @@
         .status-present { color:#10b981; }
         .status-late { color:#f59e0b; }
         .status-absent { color:#ef4444; }
+        [data-theme='light'] .stat-box .num { filter: brightness(0.75); }
     </style>
 </head>
 <body>
     <div class="dynamic-bg"><div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div></div>
 
+    <!-- Floating Utils -->
+    <div class="floating-utils">
+        <button onclick="const c=document.documentElement.getAttribute('data-theme')||'dark';const n=c==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);localStorage.setItem('theme',n);this.textContent=n==='light'?'☀️':'🌙'">🌙</button>
+        <button class="lang-toggle-btn" onclick="toggleKrupugLang()">🇹🇭</button>
+    </div>
+
     <!-- Login Screen -->
     <div id="parent-login">
         <div class="login-card glass-card">
             <div style="font-size:3rem;margin-bottom:16px;">👨‍👩‍👧</div>
-            <h2>พอร์ทัลผู้ปกครอง</h2>
-            <p>ดูผลการเรียนของบุตรหลาน</p>
-            <div class="form-group"><input type="text" class="glass-input" id="p-student-id" placeholder="รหัสนักเรียน"></div>
-            <div class="form-group"><input type="password" class="glass-input" id="p-code" placeholder="รหัสผู้ปกครอง"></div>
-            <button class="btn-glow btn-full" onclick="parentLogin()"><i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ</button>
+            <h2 data-i18n="parent_title">พอร์ทัลผู้ปกครอง</h2>
+            <p data-i18n="parent_desc">ดูผลการเรียนของบุตรหลาน</p>
+            <div class="form-group"><input type="text" class="glass-input" id="p-student-id" data-i18n-placeholder="parent_student_id" placeholder="รหัสนักเรียน"></div>
+            <div class="form-group"><input type="password" class="glass-input" id="p-code" data-i18n-placeholder="parent_code" placeholder="รหัสผู้ปกครอง"></div>
+            <button class="btn-glow btn-full" onclick="parentLogin()"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="parent_login">เข้าสู่ระบบ</span></button>
             <p id="p-error" style="color:#ef4444;display:none;margin-top:12px;"></p>
-            <a href="index.html" style="color:var(--text-muted);display:block;margin-top:16px;">← กลับหน้าหลัก</a>
+            <a href="index.html" style="color:var(--text-muted);display:block;margin-top:16px;" data-i18n="back">← กลับหน้าหลัก</a>
         </div>
     </div>
 
@@ -53,7 +60,7 @@
                     <h2>👨‍👩‍👧 รายงานผลการเรียน</h2>
                     <p style="color:var(--text-muted);" id="p-info">นักเรียน: - | ผู้ปกครอง: -</p>
                 </div>
-                <button class="btn-outline" style="border-color:#ef4444;color:#ef4444;" onclick="parentLogout()"><i class="fa-solid fa-right-from-bracket"></i> ออก</button>
+                <button class="btn-outline" onclick="parentLogout()" style="border-color:#ef4444;color:#ef4444;"><i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="parent_logout">ออก</span></button>
             </div>
 
             <!-- Stats -->
@@ -140,6 +147,8 @@
         document.getElementById('parent-login').style.display='block';
         document.getElementById('parent-dashboard').style.display='none';
     }
+    if (localStorage.getItem('theme') === 'light') document.documentElement.setAttribute('data-theme', 'light');
     </script>
+    <script src="i18n.js"></script>
 </body>
 </html>

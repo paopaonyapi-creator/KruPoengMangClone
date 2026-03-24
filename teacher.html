@@ -24,17 +24,23 @@
 <body>
     <div class="dynamic-bg"><div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div></div>
 
+    <!-- Floating Utils -->
+    <div class="floating-utils">
+        <button onclick="const c=document.documentElement.getAttribute('data-theme')||'dark';const n=c==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);localStorage.setItem('theme',n);this.textContent=n==='light'?'☀️':'🌙'">🌙</button>
+        <button class="lang-toggle-btn" onclick="toggleKrupugLang()">🇹🇭</button>
+    </div>
+
     <!-- Login -->
     <div id="teacher-login">
         <div class="login-card glass-card">
             <div style="font-size:3rem;margin-bottom:16px;">👨‍🏫</div>
-            <h2>ระบบครู</h2>
-            <p>เข้าสู่ระบบด้วยอีเมลและรหัสผ่าน</p>
-            <div class="form-group"><input type="email" class="glass-input" id="t-email" placeholder="อีเมล"></div>
-            <div class="form-group"><input type="password" class="glass-input" id="t-pass" placeholder="รหัสผ่าน"></div>
-            <button class="btn-glow btn-full" onclick="teacherLogin()"><i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ</button>
+            <h2 data-i18n="teacher_title">ระบบครู</h2>
+            <p data-i18n="teacher_desc">เข้าสู่ระบบด้วยอีเมลและรหัสผ่าน</p>
+            <div class="form-group"><input type="email" class="glass-input" id="t-email" data-i18n-placeholder="teacher_email" placeholder="อีเมล"></div>
+            <div class="form-group"><input type="password" class="glass-input" id="t-pass" data-i18n-placeholder="teacher_pass" placeholder="รหัสผ่าน"></div>
+            <button class="btn-glow btn-full" onclick="teacherLogin()"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="login">เข้าสู่ระบบ</span></button>
             <p id="t-error" style="color:#ef4444;display:none;margin-top:12px;"></p>
-            <a href="index.html" style="color:var(--text-muted);display:block;margin-top:16px;">← กลับหน้าหลัก</a>
+            <a href="index.html" style="color:var(--text-muted);display:block;margin-top:16px;" data-i18n="back">← กลับหน้าหลัก</a>
         </div>
     </div>
 
@@ -48,7 +54,7 @@
                 </div>
                 <div>
                     <a href="index.html" class="btn-outline" style="text-decoration:none;"><i class="fa-solid fa-arrow-left"></i> หน้าเว็บ</a>
-                    <button class="btn-outline" style="border-color:#ef4444;color:#ef4444;margin-left:8px;" onclick="teacherLogout()"><i class="fa-solid fa-right-from-bracket"></i> ออก</button>
+                    <button class="btn-outline" style="border-color:#ef4444;color:#ef4444;margin-left:8px;" onclick="teacherLogout()"><i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="parent_logout">ออก</span></button>
                 </div>
             </div>
 
@@ -60,14 +66,14 @@
 
             <!-- Classrooms -->
             <div class="glass-card" style="margin-bottom:24px;">
-                <h3><i class="fa-solid fa-school" style="color:#8b5cf6;"></i> ห้องเรียนของฉัน</h3>
+                <h3><i class="fa-solid fa-school" style="color:#8b5cf6;"></i> <span data-i18n="teacher_classrooms">ห้องเรียนของฉัน</span></h3>
                 <div id="t-classrooms-list"></div>
             </div>
 
             <!-- Students -->
             <div class="glass-card" style="margin-bottom:24px;">
-                <h3><i class="fa-solid fa-users" style="color:#10b981;"></i> นักเรียน</h3>
-                <table class="data-table"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>ห้อง</th></tr></thead>
+                <h3><i class="fa-solid fa-users" style="color:#10b981;"></i> <span data-i18n="teacher_students">นักเรียน</span></h3>
+                <table class="data-table"><thead><tr><th data-i18n="teacher_id">รหัส</th><th data-i18n="teacher_name">ชื่อ</th><th data-i18n="teacher_room">ห้อง</th></tr></thead>
                 <tbody id="t-students-table"></tbody></table>
             </div>
 
@@ -133,6 +139,8 @@
         document.getElementById('teacher-login').style.display='block';
         document.getElementById('teacher-dashboard').style.display='none';
     }
+    if (localStorage.getItem('theme') === 'light') document.documentElement.setAttribute('data-theme', 'light');
     </script>
+    <script src="i18n.js"></script>
 </body>
 </html>

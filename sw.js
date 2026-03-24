@@ -1,14 +1,15 @@
-const CACHE_NAME = 'krupug-v1';
+const CACHE_NAME = 'krupug-v4';
 const STATIC_ASSETS = [
     '/',
     '/index.html',
     '/index.css',
     '/app.js',
+    '/i18n.js',
     '/student.html',
     '/admin.html',
     '/admin.js',
     '/calendar.html',
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css'
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
 ];
 
 self.addEventListener('install', event => {

@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="index.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         .stu-container { max-width: 800px; margin: 20px auto; padding: 0 16px; }
         .login-box { max-width: 400px; margin: 80px auto; text-align: center; }
@@ -41,10 +43,26 @@
         .lb-row:nth-child(1) .lb-rank { color: #fbbf24; }
         .lb-row:nth-child(2) .lb-rank { color: #94a3b8; }
         .lb-row:nth-child(3) .lb-rank { color: #cd7f32; }
+        .theme-toggle-wrap { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--glass-border); }
+        .analytics-chart { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+        .badge-progress { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 16px; }
+        .badge-progress-bar { background: rgba(255,255,255,0.1); border-radius: 12px; height: 12px; overflow: hidden; margin: 8px 0; }
+        .badge-progress-fill { background: linear-gradient(90deg, #fbbf24, #f59e0b); height: 100%; border-radius: 12px; transition: width 0.5s; }
+        [data-theme='light'] .glass-card, [data-theme='light'] .stu-panel { background: rgba(255,255,255,0.85); border-color: rgba(0,0,0,0.1); }
+        [data-theme='light'] h1, [data-theme='light'] h2, [data-theme='light'] h3, [data-theme='light'] p, [data-theme='light'] span, [data-theme='light'] label { color: #1f2937; }
+        [data-theme='light'] .stu-nav button { color: #374151; }
+        [data-theme='light'] .stu-nav button.active { color: #fff; }
+        [data-theme='light'] .chat-input input { color: #1f2937; }
+        [data-theme='light'] .stat-card .val { filter: brightness(0.75); }
     </style>
 </head>
 <body>
     <div class="stu-container">
+        <!-- Floating Utils -->
+        <div class="floating-utils">
+            <button onclick="const c=document.documentElement.getAttribute('data-theme')||'dark';const n=c==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);localStorage.setItem('theme',n);this.textContent=n==='light'?'☀️':'🌙'" id="float-theme">🌙</button>
+            <button class="lang-toggle-btn" onclick="toggleKrupugLang()">🇹🇭</button>
+        </div>
         <!-- Login Screen -->
         <div id="login-screen">
             <div class="login-box">
@@ -86,13 +104,14 @@
 
             <!-- Navigation -->
             <div class="stu-nav">
-                <button class="active" onclick="switchStudentTab('dashboard',this)">🏠 หน้าหลัก</button>
-                <button onclick="switchStudentTab('quiz',this)">📝 แบบทดสอบ</button>
+                <button class="active" onclick="switchStudentTab('dashboard',this)">🏠 <span data-i18n="nav_home">หน้าหลัก</span></button>
+                <button onclick="switchStudentTab('quiz',this)">📝 <span data-i18n="nav_quiz">แบบทดสอบ</span></button>
                 <button onclick="switchStudentTab('aitutor',this)">🤖 AI Tutor</button>
-                <button onclick="switchStudentTab('chat',this)">💬 ห้องแชท</button>
-                <button onclick="switchStudentTab('leaderboard',this)">🏆 อันดับ</button>
-                <button onclick="switchStudentTab('history',this)">📊 ประวัติ</button>
-                <button onclick="switchStudentTab('settings',this)">⚙️ ตั้งค่า</button>
+                <button onclick="switchStudentTab('analytics',this)">📊 <span data-i18n="nav_analytics">สถิติของฉัน</span></button>
+                <button onclick="switchStudentTab('chat',this)">💬 <span data-i18n="nav_chat">ห้องแชท</span></button>
+                <button onclick="switchStudentTab('leaderboard',this)">🏆 <span data-i18n="nav_ranking">อันดับ</span></button>
+                <button onclick="switchStudentTab('history',this)">📋 <span data-i18n="nav_history">ประวัติ</span></button>
+                <button onclick="switchStudentTab('settings',this)">⚙️ <span data-i18n="nav_settings">ตั้งค่า</span></button>
             </div>
 
             <!-- Dashboard Panel -->
@@ -142,12 +161,26 @@
             <!-- Settings Panel -->
             <div id="stu-settings" class="stu-panel">
                 <div class="glass-card" style="max-width:400px;">
-                    <h3 style="margin-bottom:16px;"><i class="fa-solid fa-gear"></i> เปลี่ยนรหัสผ่าน</h3>
+                    <h3 style="margin-bottom:16px;"><i class="fa-solid fa-gear"></i> <span data-i18n="settings">ตั้งค่า</span></h3>
+                    <div class="theme-toggle-wrap">
+                        <span>🎨 <span data-i18n="theme">ธีม</span></span>
+                        <button class="btn-outline" onclick="toggleTheme()" id="theme-btn">🌙 Dark</button>
+                    </div>
+                    <div class="theme-toggle-wrap">
+                        <span>🌍 <span data-i18n="language">ภาษา</span></span>
+                        <button class="btn-outline" onclick="toggleLang()" id="lang-btn">🇹🇭 ไทย</button>
+                    </div>
+                    <div class="theme-toggle-wrap" style="border:none;">
+                        <span>📄 <span data-i18n="report">ดาวน์โหลดรายงาน</span></span>
+                        <button class="btn-outline" onclick="downloadReport()">📥 PDF</button>
+                    </div>
+                    <hr style="border-color:var(--glass-border);margin:16px 0;">
+                    <h4 style="margin-bottom:12px;">🔑 <span data-i18n="change_pass">เปลี่ยนรหัสผ่าน</span></h4>
                     <form onsubmit="changeStudentPassword(event)">
-                        <div class="form-group"><label>รหัสเดิม</label><input type="password" class="glass-input" id="s-old-pass" required></div>
-                        <div class="form-group"><label>รหัสใหม่</label><input type="password" class="glass-input" id="s-new-pass" required minlength="4"></div>
+                        <div class="form-group"><label data-i18n="old_pass">รหัสเดิม</label><input type="password" class="glass-input" id="s-old-pass" required></div>
+                        <div class="form-group"><label data-i18n="new_pass">รหัสใหม่</label><input type="password" class="glass-input" id="s-new-pass" required minlength="4"></div>
                         <p id="s-pass-error" style="color:#ef4444;display:none;margin-bottom:12px;"></p>
-                        <button type="submit" class="btn-glow btn-full"><i class="fa-solid fa-key"></i> เปลี่ยนรหัสผ่าน</button>
+                        <button type="submit" class="btn-glow btn-full"><i class="fa-solid fa-key"></i> <span data-i18n="change_pass_btn">เปลี่ยนรหัสผ่าน</span></button>
                     </form>
                 </div>
             </div>
@@ -163,6 +196,22 @@
                     </div>
                 </div>
                 <p style="color:var(--text-muted);font-size:0.75rem;margin-top:8px;">💡 ถาม AI ได้ทุกเรื่องคณิตศาสตร์ — จะอธิบายทีละขั้นตอน</p>
+            </div>
+
+            <!-- Self-Analytics Panel -->
+            <div id="stu-analytics" class="stu-panel">
+                <h3 style="margin-bottom:12px;">📊 <span data-i18n="my_stats">สถิติของฉัน</span></h3>
+                <div class="analytics-chart"><canvas id="quizTrendChart" height="200"></canvas></div>
+                <div class="stat-cards" style="margin-bottom:16px;">
+                    <div class="stat-card"><div class="val" id="my-avg" style="color:#3b82f6;">-</div><div class="lbl" data-i18n="my_avg">คะแนนเฉลี่ย</div></div>
+                    <div class="stat-card"><div class="val" id="class-avg" style="color:#f59e0b;">-</div><div class="lbl" data-i18n="class_avg">เฉลี่ยห้อง</div></div>
+                    <div class="stat-card"><div class="val" id="my-streak" style="color:#10b981;">0</div><div class="lbl" data-i18n="streak">Streak วัน</div></div>
+                </div>
+                <div class="badge-progress">
+                    <h4>🏆 <span data-i18n="badge_progress">ความคืบหน้าเหรียญ</span> <span id="badge-count">0/10</span></h4>
+                    <div class="badge-progress-bar"><div class="badge-progress-fill" id="badge-fill" style="width:0%"></div></div>
+                    <div class="badge-list" id="analytics-badges"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -379,6 +428,133 @@
     }
     // Init AI chat
     renderAIChat();
+
+    // ========== PHASE 6: THEME TOGGLE ==========
+    function toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme') || 'dark';
+        const next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        document.getElementById('theme-btn').textContent = next === 'light' ? '☀️ Light' : '🌙 Dark';
+    }
+    if (localStorage.getItem('theme') === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.getElementById('theme-btn').textContent = '☀️ Light';
+    }
+
+    // ========== PHASE 6: i18n ==========
+    const i18n = {
+        en: { nav_home:'Home', nav_quiz:'Quiz', nav_analytics:'My Stats', nav_chat:'Chat', nav_ranking:'Ranking', nav_history:'History', nav_settings:'Settings', settings:'Settings', theme:'Theme', language:'Language', report:'Download Report', change_pass:'Change Password', old_pass:'Old Password', new_pass:'New Password', change_pass_btn:'Change Password', my_stats:'My Statistics', my_avg:'My Average', class_avg:'Class Average', streak:'Streak Days', badge_progress:'Badge Progress' },
+        th: { nav_home:'หน้าหลัก', nav_quiz:'แบบทดสอบ', nav_analytics:'สถิติของฉัน', nav_chat:'ห้องแชท', nav_ranking:'อันดับ', nav_history:'ประวัติ', nav_settings:'ตั้งค่า', settings:'ตั้งค่า', theme:'ธีม', language:'ภาษา', report:'ดาวน์โหลดรายงาน', change_pass:'เปลี่ยนรหัสผ่าน', old_pass:'รหัสเดิม', new_pass:'รหัสใหม่', change_pass_btn:'เปลี่ยนรหัสผ่าน', my_stats:'สถิติของฉัน', my_avg:'คะแนนเฉลี่ย', class_avg:'เฉลี่ยห้อง', streak:'Streak วัน', badge_progress:'ความคืบหน้าเหรียญ' }
+    };
+    let currentLang = localStorage.getItem('krupug-lang') || 'th';
+    function toggleLang() {
+        currentLang = currentLang === 'th' ? 'en' : 'th';
+        localStorage.setItem('krupug-lang', currentLang);
+        applyLang();
+    }
+    function applyLang() {
+        const strings = i18n[currentLang] || i18n.th;
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (strings[key]) el.textContent = strings[key];
+        });
+        document.getElementById('lang-btn').textContent = currentLang === 'th' ? '🇹🇭 ไทย' : '🇬🇧 EN';
+    }
+    applyLang();
+
+    // ========== PHASE 6: SELF-ANALYTICS ==========
+    let quizTrendChart = null;
+    async function loadSelfAnalytics() {
+        try {
+            const res = await fetch('/api/student/analytics', { headers: { 'x-student-token': STU_TOKEN } });
+            const data = await res.json();
+            // Quiz trend chart
+            const ctx = document.getElementById('quizTrendChart').getContext('2d');
+            if (quizTrendChart) quizTrendChart.destroy();
+            quizTrendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.quizTrend.map(q => q.title.substring(0,15)),
+                    datasets: [{
+                        label: 'คะแนน %', data: data.quizTrend.map(q => q.percent),
+                        borderColor: '#a855f7', backgroundColor: 'rgba(168,85,247,0.1)',
+                        fill: true, tension: 0.4, pointRadius: 5
+                    }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true, max: 100, ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8', maxRotation: 45 } } }, plugins: { legend: { labels: { color: '#e2e8f0' } } } }
+            });
+            // Stats
+            const myAvg = data.quizTrend.length > 0 ? Math.round(data.quizTrend.reduce((s,q)=>s+q.percent,0)/data.quizTrend.length) : 0;
+            document.getElementById('my-avg').textContent = myAvg + '%';
+            document.getElementById('class-avg').textContent = (data.classAvg || 0) + '%';
+            document.getElementById('my-streak').textContent = data.stats?.streak_days || 0;
+            // Badge progress
+            const bp = data.badgeProgress;
+            document.getElementById('badge-count').textContent = `${bp.earned}/${bp.total}`;
+            document.getElementById('badge-fill').style.width = `${(bp.earned/bp.total)*100}%`;
+            document.getElementById('analytics-badges').innerHTML = bp.badges.map(b => `<span class="badge">${b}</span>`).join('') || '<span style="color:var(--text-muted)">ยังไม่มีเหรียญ</span>';
+        } catch(e) { console.error('Analytics error:', e); }
+    }
+
+    // ========== PHASE 6: SOCKET.IO REAL-TIME CHAT ==========
+    const socket = io();
+    socket.on('connect', () => { socket.emit('join_room', 'general'); });
+    socket.on('new_message', (msg) => {
+        const el = document.getElementById('chat-messages');
+        el.innerHTML += `<div class="chat-msg">
+            <span class="name ${msg.user_role}">${msg.user_role === 'teacher' ? '👨‍🏫' : '🎓'} ${msg.user_name}</span>
+            <div class="text">${msg.message}</div>
+        </div>`;
+        el.scrollTop = el.scrollHeight;
+    });
+
+    // Override sendChat to use Socket.io
+    window.sendChat = function() {
+        const input = document.getElementById('chat-input');
+        const msg = input.value.trim();
+        if (!msg) return;
+        socket.emit('chat_message', { room: 'general', user_name: STUDENT.name, user_role: 'student', message: msg });
+        input.value = '';
+    };
+
+    // ========== PHASE 6: PDF REPORT DOWNLOAD ==========
+    async function downloadReport() {
+        try {
+            const res = await fetch(`/api/student/report/${STUDENT.id}`);
+            const data = await res.json();
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(18);
+            doc.text('Student Report Card', 20, 20);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Name: ${data.student.name}`, 20, 35);
+            doc.text(`ID: ${data.student.student_id}`, 20, 42);
+            doc.text(`Class: ${data.student.classroom || '-'}`, 20, 49);
+            doc.text(`EXP: ${data.summary.exp} | Level: ${data.summary.level}`, 20, 56);
+            doc.text(`Avg Score: ${data.summary.avgScore}%`, 20, 63);
+            doc.text(`Attendance: ${data.summary.presentDays}/${data.summary.totalDays} days`, 20, 70);
+            doc.text(`Badges: ${data.summary.badges.join(', ') || 'None'}`, 20, 77);
+            if (data.quizResults.length > 0) {
+                doc.setFont('helvetica', 'bold');
+                doc.text('Quiz Results:', 20, 90);
+                doc.setFont('helvetica', 'normal');
+                data.quizResults.slice(0,10).forEach((r, i) => {
+                    doc.text(`${r.title}: ${r.score}/${r.total} (${r.percent}%)`, 25, 98 + i * 7);
+                });
+            }
+            doc.save(`report_${data.student.student_id}.pdf`);
+        } catch(e) { alert('ไม่สามารถดาวน์โหลดรายงานได้'); }
+    }
+
+    // Load analytics when tab is clicked
+    const origSwitch = window.switchStudentTab;
+    window.switchStudentTab = function(tab, btn) {
+        origSwitch(tab, btn);
+        if (tab === 'analytics') loadSelfAnalytics();
+    };
     </script>
 </body>
 </html>

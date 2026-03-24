@@ -6,16 +6,34 @@ const crypto = require('crypto');
 const multer = require('multer');
 const QRCode = require('qrcode');
 const fs = require('fs');
+const bcrypt = require('bcryptjs');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const xss = require('xss');
+const http = require('http');
+const { Server } = require('socket.io');
 require('dotenv').config();
 
 let OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
+let TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
+let TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: '*' } });
 const PORT = process.env.PORT || 3000;
 
+// Security middleware
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
+
+// Rate limiting for login endpoints
+const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: 'Too many login attempts, please try again after 15 minutes' }, standardHeaders: true, legacyHeaders: false });
+
+// XSS sanitize helper
+function clean(str) { return str ? xss(String(str)) : str; }
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -116,36 +134,72 @@ app.delete('/api/admin/api-key', requireAuth, (req, res) => {
     res.json({ success: true, message: 'API Key deleted' });
 });
 
+// ===================== DEMO DATA (fallback when DB unavailable) =====================
+const DEMO = {
+    systems: [
+        { id:1, ep:'EP.01', title:'ระบบแบบทดสอบออนไลน์', desc_text:'ระบบทำแบบทดสอบคณิตศาสตร์ออนไลน์ พร้อมตรวจคะแนนอัตโนมัติ', icon:'fa-clipboard-check', preview_url:'quiz.html', download_url:'#' },
+        { id:2, ep:'EP.02', title:'ระบบเช็คชื่อนักเรียน', desc_text:'เช็คชื่อเข้าเรียนด้วย QR Code สะดวกรวดเร็ว', icon:'fa-qrcode', preview_url:'student.html', download_url:'#' },
+        { id:3, ep:'EP.03', title:'ระบบจัดการห้องเรียน', desc_text:'จัดการข้อมูลห้องเรียน นักเรียน และผลการเรียน', icon:'fa-school', preview_url:'teacher.html', download_url:'#' },
+        { id:4, ep:'EP.04', title:'ระบบรายงานผู้ปกครอง', desc_text:'ผู้ปกครองดูผลการเรียนและการเข้าเรียนของลูกผ่านมือถือ', icon:'fa-users', preview_url:'parent.html', download_url:'#' },
+    ],
+    clips: [
+        { id:1, ep:'ตอนที่ 1', title:'สมการเชิงเส้น ม.1', video_url:'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+        { id:2, ep:'ตอนที่ 2', title:'เศษส่วนและทศนิยม ม.1', video_url:'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+        { id:3, ep:'ตอนที่ 3', title:'พีทาโกรัส ม.2', video_url:'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+    ],
+    prompts: [
+        { id:1, title:'สร้างโจทย์คณิต', desc_text:'สร้างโจทย์คณิตศาสตร์ระดับ ม.ต้น เรื่องสมการ 10 ข้อ พร้อมเฉลยละเอียด', icon:'fa-calculator' },
+        { id:2, title:'อธิบายแนวคิด', desc_text:'อธิบายแนวคิดเรื่องอัตราส่วนตรีโกณมิติให้นักเรียน ม.3 เข้าใจง่ายๆ พร้อมตัวอย่าง', icon:'fa-lightbulb' },
+        { id:3, title:'วิเคราะห์ข้อสอบ', desc_text:'วิเคราะห์ข้อสอบคณิตศาสตร์ O-NET ม.3 ย้อนหลัง 5 ปี แยกตามมาตรฐาน', icon:'fa-chart-bar' },
+    ],
+    materials: [
+        { id:1, title:'ใบงานสมการเชิงเส้น', desc_text:'ใบงานฝึกทักษะสมการเชิงเส้นตัวแปรเดียว ม.1 จำนวน 20 ข้อ', icon:'fa-file-pdf', file_url:'#' },
+        { id:2, title:'สรุปสูตรคณิต ม.ต้น', desc_text:'สรุปสูตรคณิตศาสตร์ ม.1-3 ครบทุกบท พร้อมตัวอย่าง', icon:'fa-book', file_url:'#' },
+    ],
+    announcements: [
+        { id:1, text:'🎉 ยินดีต้อนรับสู่ Kru Pug Hub — ศูนย์รวมสื่อคณิตศาสตร์!' },
+        { id:2, text:'📢 เปิดให้ทำแบบทดสอบออนไลน์แล้ว กดที่ Quick Links เพื่อเริ่มทำ!' },
+        { id:3, text:'🆕 อัปเดตระบบเช็คชื่อ QR Code เวอร์ชันล่าสุด' },
+    ],
+    leaderboard: [
+        { student_name:'สมชาย ใจดี', quizzes_taken:12, avg_percent:95 },
+        { student_name:'สมหญิง เก่งมาก', quizzes_taken:10, avg_percent:92 },
+        { student_name:'นายธน รักเรียน', quizzes_taken:8, avg_percent:88 },
+        { student_name:'สุดา คณิตเทพ', quizzes_taken:15, avg_percent:85 },
+        { student_name:'วิชัย เลขดี', quizzes_taken:9, avg_percent:82 },
+    ],
+};
+
 // ===================== PUBLIC APIs =====================
 
 // Systems
 app.get('/api/systems', async (req, res) => {
-    try { const [rows] = await pool.query('SELECT * FROM systems ORDER BY id DESC'); res.json(rows); }
-    catch (err) { res.status(500).json({ error: err.message }); }
+    try { const [rows] = await pool.query('SELECT * FROM systems ORDER BY id DESC'); res.json(rows.length ? rows : DEMO.systems); }
+    catch (err) { res.json(DEMO.systems); }
 });
 
 // Clips
 app.get('/api/clips', async (req, res) => {
-    try { const [rows] = await pool.query('SELECT * FROM clips ORDER BY id DESC'); res.json(rows); }
-    catch (err) { res.status(500).json({ error: err.message }); }
+    try { const [rows] = await pool.query('SELECT * FROM clips ORDER BY id DESC'); res.json(rows.length ? rows : DEMO.clips); }
+    catch (err) { res.json(DEMO.clips); }
 });
 
 // Prompts
 app.get('/api/prompts', async (req, res) => {
-    try { const [rows] = await pool.query('SELECT * FROM prompts ORDER BY id DESC'); res.json(rows); }
-    catch (err) { res.status(500).json({ error: err.message }); }
+    try { const [rows] = await pool.query('SELECT * FROM prompts ORDER BY id DESC'); res.json(rows.length ? rows : DEMO.prompts); }
+    catch (err) { res.json(DEMO.prompts); }
 });
 
 // Materials
 app.get('/api/materials', async (req, res) => {
-    try { const [rows] = await pool.query('SELECT * FROM materials ORDER BY id DESC'); res.json(rows); }
-    catch (err) { res.status(500).json({ error: err.message }); }
+    try { const [rows] = await pool.query('SELECT * FROM materials ORDER BY id DESC'); res.json(rows.length ? rows : DEMO.materials); }
+    catch (err) { res.json(DEMO.materials); }
 });
 
 // Announcements
 app.get('/api/announcements', async (req, res) => {
-    try { const [rows] = await pool.query('SELECT * FROM announcements ORDER BY id DESC'); res.json(rows); }
-    catch (err) { res.status(500).json({ error: err.message }); }
+    try { const [rows] = await pool.query('SELECT * FROM announcements ORDER BY id DESC'); res.json(rows.length ? rows : DEMO.announcements); }
+    catch (err) { res.json(DEMO.announcements); }
 });
 
 // Search
@@ -157,7 +211,17 @@ app.get('/api/search', async (req, res) => {
         const [clips] = await pool.query('SELECT id, title, "" as desc_text, "clip" as type FROM clips WHERE title LIKE ?', [q]);
         const [prompts] = await pool.query('SELECT id, title, desc_text, "prompt" as type FROM prompts WHERE title LIKE ? OR desc_text LIKE ?', [q, q]);
         res.json([...systems, ...materials, ...clips, ...prompts]);
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) {
+        // Fallback: search in demo data
+        const q = (req.query.q || '').toLowerCase();
+        const results = [
+            ...DEMO.systems.filter(s => s.title.toLowerCase().includes(q)).map(s => ({...s, type:'system'})),
+            ...DEMO.materials.filter(m => m.title.toLowerCase().includes(q)).map(m => ({...m, type:'material'})),
+            ...DEMO.clips.filter(c => c.title.toLowerCase().includes(q)).map(c => ({...c, type:'clip'})),
+            ...DEMO.prompts.filter(p => p.title.toLowerCase().includes(q)).map(p => ({...p, type:'prompt'})),
+        ];
+        res.json(results);
+    }
 });
 
 // Dashboard stats
@@ -171,17 +235,35 @@ app.get('/api/dashboard', async (req, res) => {
         const [[q]] = await pool.query('SELECT COUNT(*) as c FROM quizzes');
         const [[cr]] = await pool.query('SELECT COUNT(*) as c FROM classrooms');
         res.json({ systems: s.c, materials: m.c, clips: cl.c, prompts: p.c, wfh_today: w.c, quizzes: q.c, classrooms: cr.c });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) { res.json({ systems: DEMO.systems.length, materials: DEMO.materials.length, clips: DEMO.clips.length, prompts: DEMO.prompts.length, wfh_today: 0, quizzes: 1, classrooms: 2 }); }
+});
+
+// Leaderboard
+app.get('/api/leaderboard', async (req, res) => {
+    try {
+        const [rows] = await pool.query(`
+            SELECT s.name as student_name, COUNT(qr.id) as quizzes_taken, ROUND(AVG(qr.score_percent),0) as avg_percent
+            FROM quiz_results qr JOIN students s ON qr.student_id = s.id
+            GROUP BY s.id ORDER BY avg_percent DESC LIMIT 10
+        `);
+        res.json(rows.length ? rows : DEMO.leaderboard);
+    } catch (err) { res.json(DEMO.leaderboard); }
 });
 
 // ===================== AUTH =====================
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', loginLimiter, async (req, res) => {
     const { password } = req.body;
     try {
-        const [rows] = await pool.query("SELECT setting_value FROM admin_settings WHERE setting_key='admin_password'");
-        const dbPass = rows.length > 0 ? rows[0].setting_value : 'admin1234';
-        if (password === dbPass) {
+        let dbPass = 'admin1234';
+        try {
+            const [rows] = await pool.query("SELECT setting_value FROM admin_settings WHERE setting_key='admin_password'");
+            if (rows.length > 0) dbPass = rows[0].setting_value;
+        } catch(e) { /* DB unavailable, use default */ }
+        // Support both plain and bcrypt passwords
+        let match = password === dbPass;
+        if (!match && dbPass.startsWith('$2')) match = await bcrypt.compare(password, dbPass);
+        if (match) {
             const token = crypto.randomBytes(32).toString('hex');
             activeTokens.add(token);
             res.json({ success: true, token });
@@ -193,15 +275,18 @@ app.get('/api/auth/check', requireAuth, (req, res) => {
     res.json({ authenticated: true });
 });
 
-// Change password
+// Change password (with bcrypt hashing)
 app.put('/api/admin/change-password', requireAuth, async (req, res) => {
     try {
         const { oldPassword, newPassword } = req.body;
         const [rows] = await pool.query("SELECT setting_value FROM admin_settings WHERE setting_key='admin_password'");
         const currentPass = rows.length > 0 ? rows[0].setting_value : 'admin1234';
-        if (oldPassword !== currentPass) return res.status(400).json({ error: 'รหัสเดิมไม่ถูกต้อง' });
+        let match = oldPassword === currentPass;
+        if (!match && currentPass.startsWith('$2')) match = await bcrypt.compare(oldPassword, currentPass);
+        if (!match) return res.status(400).json({ error: 'รหัสเดิมไม่ถูกต้อง' });
         if (!newPassword || newPassword.length < 4) return res.status(400).json({ error: 'รหัสใหม่ต้องมีอย่างน้อย 4 ตัวอักษร' });
-        await pool.query("UPDATE admin_settings SET setting_value=? WHERE setting_key='admin_password'", [newPassword]);
+        const hashed = await bcrypt.hash(newPassword, 10);
+        await pool.query("INSERT INTO admin_settings (setting_key, setting_value) VALUES ('admin_password', ?) ON DUPLICATE KEY UPDATE setting_value=?", [hashed, hashed]);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -261,6 +346,7 @@ app.post('/api/admin/announcements', requireAuth, async (req, res) => {
         // Auto-create notification
         await pool.query('INSERT INTO notifications (title, message, type) VALUES (?, ?, ?)',
             ['ข่าวใหม่', text, 'announcement']);
+        sendTelegram(`📢 ประกาศใหม่\n${text}`);
         res.json({ success: true, id: result.insertId });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -449,6 +535,7 @@ app.post('/api/admin/quizzes', requireAuth, async (req, res) => {
         // Auto-create notification
         await pool.query('INSERT INTO notifications (title, message, type) VALUES (?, ?, ?)',
             ['แบบทดสอบใหม่', `มีแบบทดสอบ "${title}" ใหม่ ลองทำกันเลย!`, 'quiz']);
+        sendTelegram(`📝 แบบทดสอบใหม่\n"${title}"\nจำนวน ${questions ? questions.length : 0} ข้อ — ลองทำกันเลย!`);
         res.json({ success: true, id: quizId });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -718,19 +805,22 @@ app.delete('/api/admin/schedule/:id', requireAuth, async (req, res) => {
 
 const studentTokens = new Map();
 
-app.post('/api/student/login', async (req, res) => {
+app.post('/api/student/login', loginLimiter, async (req, res) => {
     try {
         const { student_id, password } = req.body;
         const [[student]] = await pool.query(
             'SELECT s.*, c.name as classroom_name FROM students s LEFT JOIN classrooms c ON s.classroom_id=c.id WHERE s.student_id=?',
             [student_id]);
         if (!student) return res.status(401).json({ error: 'ไม่พบรหัสนักเรียน' });
-        if (student.password && student.password !== (password||'1234')) {
+        // Support both plain and bcrypt passwords  
+        let match = student.password === (password||'1234');
+        if (!match && student.password?.startsWith('$2')) match = await bcrypt.compare(password||'1234', student.password);
+        if (student.password && !match) {
             return res.status(401).json({ error: 'รหัสผ่านไม่ถูกต้อง' });
         }
         const token = crypto.randomBytes(32).toString('hex');
-        studentTokens.set(token, { id: student.id, student_id: student.student_id, name: student.name, classroom: student.classroom_name });
-        res.json({ success: true, token, student: { id: student.id, student_id: student.student_id, name: student.name, classroom: student.classroom_name } });
+        studentTokens.set(token, { id: student.id, student_id: student.student_id, name: student.name, classroom: student.classroom_name, classroom_id: student.classroom_id });
+        res.json({ success: true, token, student: { id: student.id, student_id: student.student_id, name: student.name, classroom: student.classroom_name, classroom_id: student.classroom_id } });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -764,8 +854,11 @@ app.put('/api/student/change-password', requireStudentAuth, async (req, res) => 
     try {
         const { oldPassword, newPassword } = req.body;
         const [[student]] = await pool.query('SELECT password FROM students WHERE id=?', [req.student.id]);
-        if (student.password !== oldPassword) return res.status(400).json({ error: 'รหัสเดิมไม่ถูกต้อง' });
-        await pool.query('UPDATE students SET password=? WHERE id=?', [newPassword, req.student.id]);
+        let match = student.password === oldPassword;
+        if (!match && student.password?.startsWith('$2')) match = await bcrypt.compare(oldPassword, student.password);
+        if (!match) return res.status(400).json({ error: 'รหัสเดิมไม่ถูกต้อง' });
+        const hashed = await bcrypt.hash(newPassword, 10);
+        await pool.query('UPDATE students SET password=? WHERE id=?', [hashed, req.student.id]);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -807,13 +900,26 @@ async function awardEXP(studentId, amount, reason) {
             const newExp = existing.exp + amount;
             const newLevel = Math.floor(newExp / 100) + 1;
             let badges = JSON.parse(existing.badges || '[]');
-            // Auto badges
+            // Auto badges — Phase 6 Enhanced
             if (newExp >= 100 && !badges.includes('🌟 เริ่มต้น')) badges.push('🌟 เริ่มต้น');
+            if (newExp >= 300 && !badges.includes('💪 มุ่งมั่น')) badges.push('💪 มุ่งมั่น');
             if (newExp >= 500 && !badges.includes('🔥 ขยัน')) badges.push('🔥 ขยัน');
             if (newExp >= 1000 && !badges.includes('🏆 เก่งมาก')) badges.push('🏆 เก่งมาก');
             if (newExp >= 2000 && !badges.includes('💎 ระดับเพชร')) badges.push('💎 ระดับเพชร');
-            await pool.query('UPDATE student_stats SET exp=?, level=?, badges=?, last_activity=CURDATE() WHERE student_id=?',
-                [newExp, newLevel, JSON.stringify(badges), studentId]);
+            if (newExp >= 5000 && !badges.includes('👑 ระดับตำนาน')) badges.push('👑 ระดับตำนาน');
+            // Streak check
+            const lastActivity = existing.last_activity ? new Date(existing.last_activity).toDateString() : '';
+            const yesterday = new Date(Date.now() - 86400000).toDateString();
+            const today = new Date().toDateString();
+            let streak = existing.streak_days || 0;
+            if (lastActivity === yesterday) streak += 1;
+            else if (lastActivity !== today) streak = 1;
+            if (streak >= 7 && !badges.includes('📅 เข้าเรียน 7 วันติด')) badges.push('📅 เข้าเรียน 7 วันติด');
+            if (streak >= 30 && !badges.includes('🌈 เข้าเรียน 30 วันติด')) badges.push('🌈 เข้าเรียน 30 วันติด');
+            // Quiz performance badges
+            if (reason === 'quiz_perfect' && !badges.includes('🎯 ทำข้อสอบเต็ม')) badges.push('🎯 ทำข้อสอบเต็ม');
+            await pool.query('UPDATE student_stats SET exp=?, level=?, badges=?, streak_days=?, last_activity=CURDATE() WHERE student_id=?',
+                [newExp, newLevel, JSON.stringify(badges), streak, studentId]);
         }
     } catch(e) { console.error('EXP Error:', e); }
 }
@@ -885,6 +991,7 @@ app.post('/api/admin/notify', requireAuth, async (req, res) => {
         const [result] = await pool.query(
             'INSERT INTO notifications (title, message, type, target_classroom_id) VALUES (?,?,?,?)',
             [title, message || '', type || 'system', classroom_id || null]);
+        sendTelegram(`🔔 ${title}\n${message || ''}`);
         res.json({ success: true, id: result.insertId });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -1167,6 +1274,132 @@ app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// ===================== PHASE 6: TELEGRAM BOT NOTIFY =====================
+
+async function sendTelegram(message) {
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+    try {
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: 'HTML' })
+        });
+    } catch(e) { console.error('Telegram Error:', e.message); }
+}
+
+// Telegram Settings Management
+app.get('/api/admin/telegram', requireAuth, (req, res) => {
+    res.json({
+        hasToken: !!(TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID),
+        bot_token: TELEGRAM_BOT_TOKEN ? '***' + TELEGRAM_BOT_TOKEN.slice(-6) : '',
+        chat_id: TELEGRAM_CHAT_ID || ''
+    });
+});
+
+app.post('/api/admin/telegram', requireAuth, (req, res) => {
+    const { bot_token, chat_id } = req.body;
+    TELEGRAM_BOT_TOKEN = (bot_token || '').trim();
+    TELEGRAM_CHAT_ID = (chat_id || '').trim();
+    // Save to .env
+    const envPath = path.join(__dirname, '.env');
+    let envContent = '';
+    try { envContent = fs.readFileSync(envPath, 'utf-8'); } catch(e) {}
+    // Update or add TELEGRAM_BOT_TOKEN
+    if (envContent.includes('TELEGRAM_BOT_TOKEN=')) {
+        envContent = envContent.replace(/TELEGRAM_BOT_TOKEN=.*/g, `TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}`);
+    } else {
+        envContent += `\nTELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}`;
+    }
+    // Update or add TELEGRAM_CHAT_ID
+    if (envContent.includes('TELEGRAM_CHAT_ID=')) {
+        envContent = envContent.replace(/TELEGRAM_CHAT_ID=.*/g, `TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}`);
+    } else {
+        envContent += `\nTELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}`;
+    }
+    fs.writeFileSync(envPath, envContent.trim() + '\n');
+    res.json({ success: true });
+});
+
+app.post('/api/admin/telegram/test', requireAuth, async (req, res) => {
+    const botToken = req.body.bot_token || TELEGRAM_BOT_TOKEN;
+    const chatId = req.body.chat_id || TELEGRAM_CHAT_ID;
+    if (!botToken || !chatId) return res.status(400).json({ error: 'กรุณาใส่ Bot Token และ Chat ID' });
+    try {
+        const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: chatId, text: '✅ ทดสอบจาก Kru Pug App สำเร็จ!' })
+        });
+        const data = await response.json();
+        if (data.ok) res.json({ success: true, message: 'Telegram ส่งสำเร็จ!' });
+        else res.json({ success: false, message: data.description || 'Token/Chat ID ไม่ถูกต้อง' });
+    } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+// ===================== PHASE 6: STUDENT SELF-ANALYTICS =====================
+
+app.get('/api/student/analytics', requireStudentAuth, async (req, res) => {
+    try {
+        const sid = req.student.id;
+        const studentName = req.student.name;
+        // Quiz score trend (last 10 quizzes)
+        const [quizTrend] = await pool.query(`
+            SELECT q.title, qr.score, qr.total, ROUND(qr.score/qr.total*100,1) as percent, qr.submitted_at
+            FROM quiz_results qr JOIN quizzes q ON qr.quiz_id=q.id
+            WHERE qr.student_name=? ORDER BY qr.submitted_at DESC LIMIT 10`, [studentName]);
+        // Attendance streak
+        const [attHistory] = await pool.query(`
+            SELECT date, status FROM attendance WHERE student_id=? ORDER BY date DESC LIMIT 30`, [sid]);
+        // EXP growth (from student_stats)
+        const [[stats]] = await pool.query('SELECT * FROM student_stats WHERE student_id=?', [sid]);
+        // Compare with class average
+        const [[classAvg]] = await pool.query(`
+            SELECT ROUND(AVG(qr.score/qr.total*100),1) as avg_score FROM quiz_results qr
+            JOIN students s ON qr.student_name=s.name WHERE s.classroom_id=?`, [req.student.classroom_id || 0]);
+        // Badge count vs total
+        const badges = stats ? JSON.parse(stats.badges || '[]') : [];
+        const totalPossibleBadges = 10;
+        res.json({
+            quizTrend: quizTrend.reverse(),
+            attendanceHistory: attHistory,
+            stats: stats || { exp: 0, level: 1, badges: '[]', streak_days: 0 },
+            classAvg: classAvg?.avg_score || 0,
+            badgeProgress: { earned: badges.length, total: totalPossibleBadges, badges }
+        });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ===================== PHASE 6: STUDENT REPORT PDF DATA =====================
+
+app.get('/api/student/report/:studentId', async (req, res) => {
+    try {
+        const [[student]] = await pool.query(
+            'SELECT s.*, c.name as classroom_name FROM students s LEFT JOIN classrooms c ON s.classroom_id=c.id WHERE s.id=?',
+            [req.params.studentId]);
+        if (!student) return res.status(404).json({ error: 'Student not found' });
+        const [quizResults] = await pool.query(`
+            SELECT q.title, qr.score, qr.total, ROUND(qr.score/qr.total*100,1) as percent, qr.submitted_at
+            FROM quiz_results qr JOIN quizzes q ON qr.quiz_id=q.id
+            WHERE qr.student_name=? ORDER BY qr.submitted_at DESC`, [student.name]);
+        const [attendance] = await pool.query(
+            'SELECT date, status FROM attendance WHERE student_id=? ORDER BY date DESC', [student.id]);
+        const [[stats]] = await pool.query('SELECT * FROM student_stats WHERE student_id=?', [student.id]);
+        const totalQuizzes = quizResults.length;
+        const avgScore = totalQuizzes > 0 ? Math.round(quizResults.reduce((s,r) => s + r.percent, 0) / totalQuizzes) : 0;
+        const presentDays = attendance.filter(a => a.status === 'present').length;
+        const totalDays = attendance.length;
+        res.json({
+            student: { name: student.name, student_id: student.student_id, classroom: student.classroom_name },
+            quizResults, attendance,
+            summary: {
+                totalQuizzes, avgScore, presentDays, totalDays,
+                exp: stats?.exp || 0, level: stats?.level || 1,
+                badges: JSON.parse(stats?.badges || '[]')
+            }
+        });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // Auto-migrate on startup
 async function autoMigrate() {
     try {
@@ -1198,8 +1431,30 @@ async function autoMigrate() {
     } catch(e) { console.error('Migration error:', e.message); }
 }
 
-// Start Server
-app.listen(PORT, async () => {
+// ===================== SOCKET.IO REAL-TIME CHAT =====================
+
+io.on('connection', (socket) => {
+    socket.on('join_room', (room) => {
+        socket.join(room || 'general');
+    });
+    socket.on('chat_message', async (data) => {
+        const { room, user_name, user_role, message } = data;
+        if (!message?.trim()) return;
+        try {
+            const [result] = await pool.query(
+                'INSERT INTO chat_messages (room, user_name, user_role, message) VALUES (?,?,?,?)',
+                [room || 'general', clean(user_name) || 'Anonymous', user_role || 'student', clean(message.trim())]);
+            io.to(room || 'general').emit('new_message', {
+                id: result.insertId, room: room || 'general',
+                user_name: user_name || 'Anonymous', user_role: user_role || 'student',
+                message: message.trim(), created_at: new Date().toISOString()
+            });
+        } catch(e) { console.error('Chat Error:', e.message); }
+    });
+});
+
+// Start Server with Socket.io
+server.listen(PORT, async () => {
     console.log(`Server is running on http://localhost:${PORT}`);
     await autoMigrate();
 });

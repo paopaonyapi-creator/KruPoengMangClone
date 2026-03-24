@@ -26,22 +26,19 @@
                 <span>ครูพัก (Pug) คณิตศาสตร์</span>
             </div>
             <ul class="nav-links">
-                <li><a href="#" data-page="home" class="active"><i class="fa-solid fa-house"></i> หน้าแรก</a></li>
-                <li><a href="#" data-page="systems"><i class="fa-solid fa-laptop-code"></i> ระบบการศึกษา</a></li>
-                <li><a href="#" data-page="materials"><i class="fa-solid fa-book-open"></i> สื่อการสอน</a></li>
-                <li><a href="#" data-page="clips"><i class="fa-solid fa-video"></i> คลิปการสอน</a></li>
-                <li><a href="#" data-page="prompts"><i class="fa-solid fa-robot"></i> AI Prompt</a></li>
+                <li><a href="#" data-page="home" class="active"><i class="fa-solid fa-house"></i> <span data-i18n="nav_home">หน้าแรก</span></a></li>
+                <li><a href="#" data-page="systems"><i class="fa-solid fa-laptop-code"></i> <span data-i18n="nav_systems">ระบบการศึกษา</span></a></li>
+                <li><a href="#" data-page="materials"><i class="fa-solid fa-book-open"></i> <span data-i18n="nav_materials">สื่อการสอน</span></a></li>
+                <li><a href="#" data-page="clips"><i class="fa-solid fa-video"></i> <span data-i18n="nav_clips">คลิปการสอน</span></a></li>
+                <li><a href="#" data-page="prompts"><i class="fa-solid fa-robot"></i> <span data-i18n="nav_prompts">AI Prompt</span></a></li>
             </ul>
             <div class="nav-actions">
                 <button id="notif-bell" class="btn-outline btn-theme" title="แจ้งเตือน" onclick="toggleNotifPanel()">
                     <i class="fa-solid fa-bell"></i>
                     <span id="notif-badge" class="notif-badge" style="display:none;">0</span>
                 </button>
-                <a href="student.html" class="btn-outline btn-theme" title="นักเรียน" style="text-decoration:none;"><i class="fa-solid fa-graduation-cap"></i></a>
-                <a href="calendar.html" class="btn-outline btn-theme" title="ปฏิทิน" style="text-decoration:none;"><i class="fa-solid fa-calendar-days"></i></a>
-                <a href="parent.html" class="btn-outline btn-theme" title="ผู้ปกครอง" style="text-decoration:none;"><i class="fa-solid fa-users"></i></a>
-                <a href="teacher.html" class="btn-outline btn-theme" title="ครู" style="text-decoration:none;"><i class="fa-solid fa-chalkboard-user"></i></a>
                 <button id="theme-toggle" class="btn-outline btn-theme" title="สลับธีม"><i class="fa-solid fa-moon"></i></button>
+                <button class="btn-outline btn-theme lang-toggle-btn" title="เปลี่ยนภาษา" onclick="toggleKrupugLang()">🇹🇭</button>
                 <button id="btn-admin" class="btn-outline btn-admin"><i class="fa-solid fa-lock"></i> Admin</button>
                 <button class="mobile-toggle"><i class="fa-solid fa-bars"></i></button>
             </div>
@@ -72,22 +69,22 @@
             </div>
 
             <!-- Quick Links -->
-            <div class="quick-links animate-in">
-                <a href="quiz.html" class="quick-link glass-card">
-                    <i class="fa-solid fa-pen-ruler" style="color:#f59e0b;"></i>
-                    <span>แบบทดสอบ</span>
-                </a>
+            <div class="quick-links animate-in" style="grid-template-columns:repeat(4,1fr);">
                 <a href="student.html" class="quick-link glass-card">
                     <i class="fa-solid fa-user-graduate" style="color:#10b981;"></i>
-                    <span>พอร์ทัลนักเรียน</span>
+                    <span data-i18n="ql_student">พอร์ทัลนักเรียน</span>
+                </a>
+                <a href="quiz.html" class="quick-link glass-card">
+                    <i class="fa-solid fa-pen-ruler" style="color:#f59e0b;"></i>
+                    <span data-i18n="ql_quiz">แบบทดสอบ</span>
                 </a>
                 <a href="calendar.html" class="quick-link glass-card">
                     <i class="fa-solid fa-calendar-days" style="color:#3b82f6;"></i>
-                    <span>ตารางสอน</span>
+                    <span data-i18n="ql_calendar">ตารางสอน</span>
                 </a>
-                <a href="wfh.html" class="quick-link glass-card">
-                    <i class="fa-solid fa-house-laptop" style="color:#8b5cf6;"></i>
-                    <span>WFH</span>
+                <a href="attendance.html" class="quick-link glass-card">
+                    <i class="fa-solid fa-clipboard-check" style="color:#ec4899;"></i>
+                    <span>เช็คชื่อ</span>
                 </a>
             </div>
 
@@ -213,6 +210,7 @@
         </div>
     </div>
 
+    <script src="i18n.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
