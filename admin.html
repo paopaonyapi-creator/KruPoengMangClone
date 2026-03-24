@@ -406,18 +406,18 @@
                 <div id="tg-result" style="display:none;padding:12px;border-radius:8px;font-size:0.9rem;"></div>
             </div>
 
-            <!-- LINE Notify Management -->
+            <!-- LINE Messaging API -->
             <div class="glass-card" style="margin-top:24px;max-width:600px;">
-                <h3><i class="fa-brands fa-line" style="color:#06c755;"></i> LINE Notify แจ้งเตือน</h3>
-                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">ส่งแจ้งเตือนผ่าน LINE ถึงกลุ่มครูหรือผู้ปกครอง<br><a href="https://notify-bot.line.me/my/" target="_blank" style="color:#06c755;">สร้าง Token ที่ notify-bot.line.me →</a></p>
+                <h3><i class="fa-brands fa-line" style="color:#06c755;"></i> LINE Messaging API แจ้งเตือน</h3>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">ส่งแจ้งเตือนผ่าน LINE ถึงผู้ติดตาม (Broadcast)<br><a href="https://developers.line.biz/console/" target="_blank" style="color:#06c755;">สร้าง Channel Access Token ที่ LINE Developers Console →</a></p>
                 <div class="form-group">
                     <label>สถานะ</label>
                     <div id="line-status" style="padding:10px;border-radius:8px;background:rgba(0,0,0,0.2);font-family:monospace;font-size:0.85rem;color:var(--text-muted);">กำลังโหลด...</div>
                 </div>
                 <div class="form-group">
-                    <label>LINE Notify Token</label>
+                    <label>Channel Access Token</label>
                     <div style="display:flex;gap:8px;">
-                        <input type="password" class="glass-input" id="line-token-input" placeholder="Bearer token จาก notify-bot.line.me" style="flex:1;margin:0;font-family:monospace;">
+                        <input type="password" class="glass-input" id="line-token-input" placeholder="Channel Access Token จาก LINE Developers Console" style="flex:1;margin:0;font-family:monospace;">
                         <button class="btn-outline" style="padding:8px 12px;" onclick="document.getElementById('line-token-input').type=document.getElementById('line-token-input').type==='password'?'text':'password'" title="แสดง/ซ่อน"><i class="fa-solid fa-eye"></i></button>
                     </div>
                 </div>

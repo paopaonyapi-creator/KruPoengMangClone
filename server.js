@@ -17,7 +17,7 @@ require('dotenv').config();
 let OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
 let TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 let TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
-let LINE_NOTIFY_TOKEN = process.env.LINE_NOTIFY_TOKEN || '';
+let LINE_CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN || '';
 
 const app = express();
 const server = http.createServer(app);
@@ -1532,54 +1532,54 @@ app.get('/api/student/report/:studentId', async (req, res) => {
     }
 });
 
-// ===================== LINE NOTIFY =====================
+// ===================== LINE MESSAGING API =====================
 
+// Broadcast message to all LINE followers
 app.post('/api/admin/line-notify', requireAuth, async (req, res) => {
     try {
         const { message } = req.body;
         if (!message) return res.status(400).json({ error: 'กรุณากรอกข้อความ' });
-        if (!LINE_NOTIFY_TOKEN) return res.status(400).json({ error: 'LINE Notify ยังไม่ได้ตั้งค่า (LINE_NOTIFY_TOKEN)' });
-        const resp = await fetch('https://notify-api.line.me/api/notify', {
+        if (!LINE_CHANNEL_ACCESS_TOKEN) return res.status(400).json({ error: 'LINE Messaging API ยังไม่ได้ตั้งค่า (Channel Access Token)' });
+        const resp = await fetch('https://api.line.me/v2/bot/message/broadcast', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': `Bearer ${LINE_NOTIFY_TOKEN}` },
-            body: `message=${encodeURIComponent(message)}`
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` },
+            body: JSON.stringify({ messages: [{ type: 'text', text: message }] })
         });
-        const data = await resp.json();
-        res.json({ success: data.status === 200, data });
+        const ok = resp.status === 200;
+        res.json({ success: ok, status: resp.status });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Test LINE Messaging API
 app.post('/api/admin/line-notify/test', requireAuth, async (req, res) => {
-    req.body.message = req.body.message || '🧪 ทดสอบ LINE Notify จาก Kru Pug Hub - ระบบแจ้งเตือนทำงานปกติ!';
-    // Forward to the main LINE Notify handler
-    const { message } = req.body;
-    if (!LINE_NOTIFY_TOKEN) return res.json({ success: false, error: 'LINE_NOTIFY_TOKEN ยังไม่ได้ตั้งค่า (ตั้งค่าใน .env)' });
+    const message = '🧪 ทดสอบ LINE จาก Kru Pug Hub - ระบบแจ้งเตือนทำงานปกติ!';
+    if (!LINE_CHANNEL_ACCESS_TOKEN) return res.json({ success: false, error: 'Channel Access Token ยังไม่ได้ตั้งค่า' });
     try {
-        const resp = await fetch('https://notify-api.line.me/api/notify', {
+        const resp = await fetch('https://api.line.me/v2/bot/message/broadcast', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': `Bearer ${LINE_NOTIFY_TOKEN}` },
-            body: `message=${encodeURIComponent(message)}`
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` },
+            body: JSON.stringify({ messages: [{ type: 'text', text: message }] })
         });
-        const data = await resp.json();
-        res.json({ success: data.status === 200, data });
+        const ok = resp.status === 200;
+        res.json({ success: ok, status: resp.status });
     } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// Save LINE Notify Token
+// Save LINE Channel Access Token
 app.post('/api/admin/line-notify/save', requireAuth, async (req, res) => {
     try {
         const { token } = req.body;
-        if (!token) return res.status(400).json({ error: 'กรุณาใส่ Token' });
-        LINE_NOTIFY_TOKEN = token;
+        if (!token) return res.status(400).json({ error: 'กรุณาใส่ Channel Access Token' });
+        LINE_CHANNEL_ACCESS_TOKEN = token;
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// LINE Notify Status
+// LINE Status
 app.get('/api/admin/line-notify/status', requireAuth, async (req, res) => {
     res.json({
-        hasToken: !!LINE_NOTIFY_TOKEN,
-        token_preview: LINE_NOTIFY_TOKEN ? `${LINE_NOTIFY_TOKEN.substr(0, 8)}...${LINE_NOTIFY_TOKEN.substr(-4)}` : null
+        hasToken: !!LINE_CHANNEL_ACCESS_TOKEN,
+        token_preview: LINE_CHANNEL_ACCESS_TOKEN ? `${LINE_CHANNEL_ACCESS_TOKEN.substr(0, 8)}...${LINE_CHANNEL_ACCESS_TOKEN.substr(-4)}` : null
     });
 });
 

@@ -18,7 +18,7 @@
 | 💬 **Real-time Chat** | ห้องแชทพร้อม Emoji Picker + Socket.IO |
 | 📊 **Admin Dashboard** | สถิติ, กราฟ, จัดการข้อมูล, Export CSV |
 | 📅 **ปฏิทินกิจกรรม** | ตารางสอน + กิจกรรมรายสัปดาห์ |
-| 🔔 **แจ้งเตือน** | Telegram + LINE Notify |
+| 🔔 **แจ้งเตือน** | Telegram + LINE Messaging API |
 | 🌙 **Dark/Light Mode** | สลับธีมได้ |
 | 🌐 **สองภาษา** | ไทย / English |
 | 📱 **PWA** | ติดตั้งเป็น App บนมือถือ |
@@ -62,7 +62,7 @@ ADMIN_PASS=pugadmin2024
 OPENROUTER_API_KEY=your_key_here
 TELEGRAM_BOT_TOKEN=your_bot_token
 TELEGRAM_CHAT_ID=your_chat_id
-LINE_NOTIFY_TOKEN=your_line_token
+LINE_CHANNEL_ACCESS_TOKEN=your_channel_access_token
 ```
 
 > 💡 **ไม่มี MySQL?** ไม่ต้องห่วง! ระบบจะใช้ Demo Data อัตโนมัติ
@@ -100,7 +100,7 @@ KruPoengMangClone/
 - **Database**: MySQL (optional)
 - **Frontend**: Vanilla JS, CSS3 (Glassmorphism)
 - **AI**: OpenRouter API
-- **Notifications**: Telegram Bot, LINE Notify
+- **Notifications**: Telegram Bot, LINE Messaging API
 - **Charts**: Chart.js
 - **PDF**: jsPDF
 - **QR Code**: qrcode
