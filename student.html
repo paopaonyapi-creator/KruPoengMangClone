@@ -115,19 +115,16 @@
                 <div class="badge-list" id="badge-list"></div>
             </div>
 
-            <!-- Navigation -->
+            <!-- Navigation (Clean 8 tabs) -->
             <div class="stu-nav">
-                <button class="active" onclick="switchStudentTab('dashboard',this)">🏠 <span data-i18n="nav_home">หน้าหลัก</span></button>
-                <button onclick="switchStudentTab('quiz',this)">📝 <span data-i18n="nav_quiz">แบบทดสอบ</span></button>
+                <button class="active" onclick="switchStudentTab('dashboard',this)">🏠 หน้าหลัก</button>
+                <button onclick="switchStudentTab('quiz',this)">📝 แบบทดสอบ</button>
                 <button onclick="switchStudentTab('aitutor',this)">🤖 AI Tutor</button>
-                <button onclick="switchStudentTab('analytics',this)">📊 <span data-i18n="nav_analytics">สถิติของฉัน</span></button>
-                <button onclick="switchStudentTab('chat',this)">💬 <span data-i18n="nav_chat">ห้องแชท</span></button>
-                <button onclick="switchStudentTab('leaderboard',this)">🏆 <span data-i18n="nav_ranking">อันดับ</span></button>
-                <button onclick="switchStudentTab('history',this)">📋 <span data-i18n="nav_history">ประวัติ</span></button>
+                <button onclick="switchStudentTab('analytics',this)">📊 สถิติ</button>
+                <button onclick="switchStudentTab('chat',this)">💬 แชท</button>
+                <button onclick="switchStudentTab('leaderboard',this)">🏆 อันดับ</button>
                 <button onclick="switchStudentTab('progress',this)">📈 ความก้าวหน้า</button>
-                <button onclick="switchStudentTab('homework',this)">📝 การบ้าน</button>
-                <button onclick="switchStudentTab('notifications',this)" id="notif-tab-btn">🔔 <span>แจ้งเตือน</span> <span id="notif-badge" style="background:#ef4444;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;display:none;">0</span></button>
-                <button onclick="switchStudentTab('settings',this)">⚙️ <span data-i18n="nav_settings">ตั้งค่า</span></button>
+                <button onclick="switchStudentTab('settings',this)">⚙️ ตั้งค่า</button>
             </div>
 
             <!-- Dashboard Panel -->
@@ -140,6 +137,9 @@
                 </div>
                 <h3 style="margin-bottom:12px;">🔔 แจ้งเตือนล่าสุด</h3>
                 <div id="s-notifications" style="color:var(--text-muted);">กำลังโหลด...</div>
+                <!-- Homework Section -->
+                <h3 style="margin:20px 0 12px;">📝 การบ้านของฉัน</h3>
+                <div id="homework-list"><p style="color:var(--text-muted);text-align:center;">กำลังโหลด...</p></div>
             </div>
 
             <!-- Quiz Panel -->
@@ -148,15 +148,15 @@
                 <div id="quiz-list-student">กำลังโหลด...</div>
             </div>
 
-            <!-- Chat Panel -->
+            <!-- Chat Panel (merged: old chat + socket.io chat) -->
             <div id="stu-chat" class="stu-panel">
-                <h3 style="margin-bottom:12px;">💬 ห้องแชทกลาง</h3>
+                <h3 style="margin-bottom:12px;">💬 ห้องแชทห้องเรียน</h3>
                 <div class="chat-box">
-                    <div class="chat-messages" id="chat-messages"></div>
-                    <div id="emoji-picker" style="display:none;padding:8px;border-top:1px solid var(--glass-border);display:none;flex-wrap:wrap;gap:2px;"></div>
+                    <div class="chat-messages" id="chat-messages-main"></div>
+                    <div id="emoji-picker" style="display:none;padding:8px;border-top:1px solid var(--glass-border);flex-wrap:wrap;gap:2px;"></div>
                     <div class="chat-input">
                         <button onclick="toggleEmoji()" style="background:transparent;border:none;color:#fff;padding:0 10px;font-size:1.2rem;cursor:pointer;" title="Emoji">😊</button>
-                        <input id="chat-input" placeholder="พิมพ์ข้อความ..." onkeydown="if(event.key==='Enter')sendChat()">
+                        <input id="chat-input-main" placeholder="พิมพ์ข้อความ..." onkeydown="if(event.key==='Enter')sendChat()">
                         <button onclick="sendChat()"><i class="fa-solid fa-paper-plane"></i></button>
                     </div>
                 </div>
@@ -168,37 +168,36 @@
                 <div id="leaderboard-list">กำลังโหลด...</div>
             </div>
 
-            <!-- History Panel -->
-            <div id="stu-history" class="stu-panel">
-                <h3 style="margin-bottom:12px;">📊 ประวัติแบบทดสอบ</h3>
-                <div id="history-list">กำลังโหลด...</div>
-                <h3 style="margin:20px 0 12px;">🗓️ ประวัติเช็คชื่อ</h3>
-                <div id="attendance-list">กำลังโหลด...</div>
-            </div>
+            <!-- History Panel (inside Analytics) -->
 
             <!-- Settings Panel -->
             <div id="stu-settings" class="stu-panel">
                 <div class="glass-card" style="max-width:400px;">
-                    <h3 style="margin-bottom:16px;"><i class="fa-solid fa-gear"></i> <span data-i18n="settings">ตั้งค่า</span></h3>
+                    <h3 style="margin-bottom:16px;"><i class="fa-solid fa-gear"></i> ตั้งค่า</h3>
                     <div class="theme-toggle-wrap">
-                        <span>🎨 <span data-i18n="theme">ธีม</span></span>
+                        <span>🎨 ธีม</span>
                         <button class="btn-outline" onclick="toggleTheme()" id="theme-btn">🌙 Dark</button>
                     </div>
                     <div class="theme-toggle-wrap">
-                        <span>🌍 <span data-i18n="language">ภาษา</span></span>
+                        <span>🌍 ภาษา</span>
                         <button class="btn-outline" onclick="toggleLang()" id="lang-btn">🇹🇭 ไทย</button>
                     </div>
-                    <div class="theme-toggle-wrap" style="border:none;">
-                        <span>📄 <span data-i18n="report">ดาวน์โหลดรายงาน</span></span>
+                    <div class="theme-toggle-wrap">
+                        <span>📄 ดาวน์โหลดรายงาน</span>
                         <button class="btn-outline" onclick="downloadReport()">📥 PDF</button>
                     </div>
+                    <div class="theme-toggle-wrap" style="border:none;">
+                        <span><i class="fa-brands fa-line" style="color:#06c755;"></i> ส่งรายงานผ่าน LINE</span>
+                        <button class="btn-outline" style="border-color:#06c755;color:#06c755;" onclick="shareToLINE()">📤 ส่ง</button>
+                    </div>
+                    <div id="line-share-result" style="margin-bottom:8px;"></div>
                     <hr style="border-color:var(--glass-border);margin:16px 0;">
-                    <h4 style="margin-bottom:12px;">🔑 <span data-i18n="change_pass">เปลี่ยนรหัสผ่าน</span></h4>
+                    <h4 style="margin-bottom:12px;">🔑 เปลี่ยนรหัสผ่าน</h4>
                     <form onsubmit="changeStudentPassword(event)">
-                        <div class="form-group"><label data-i18n="old_pass">รหัสเดิม</label><input type="password" class="glass-input" id="s-old-pass" required></div>
-                        <div class="form-group"><label data-i18n="new_pass">รหัสใหม่</label><input type="password" class="glass-input" id="s-new-pass" required minlength="4"></div>
+                        <div class="form-group"><label>รหัสเดิม</label><input type="password" class="glass-input" id="s-old-pass" required></div>
+                        <div class="form-group"><label>รหัสใหม่</label><input type="password" class="glass-input" id="s-new-pass" required minlength="4"></div>
                         <p id="s-pass-error" style="color:#ef4444;display:none;margin-bottom:12px;"></p>
-                        <button type="submit" class="btn-glow btn-full"><i class="fa-solid fa-key"></i> <span data-i18n="change_pass_btn">เปลี่ยนรหัสผ่าน</span></button>
+                        <button type="submit" class="btn-glow btn-full"><i class="fa-solid fa-key"></i> เปลี่ยนรหัสผ่าน</button>
                     </form>
                 </div>
             </div>
@@ -213,26 +212,45 @@
                         <button onclick="sendAIChat()" id="ai-send-btn"><i class="fa-solid fa-paper-plane"></i></button>
                     </div>
                 </div>
-                <p style="color:var(--text-muted);font-size:0.75rem;margin-top:8px;">💡 ถาม AI ได้ทุกเรื่องคณิตศาสตร์ — จะอธิบายทีละขั้นตอน</p>
+                <p style="color:var(--text-muted);font-size:0.75rem;margin-top:8px;">💡 ถาม AI ได้ทุกเรื่องคณิตศาสตร์</p>
             </div>
 
-            <!-- Self-Analytics Panel -->
+            <!-- Analytics Panel (merged: stats + heatmap + history) -->
             <div id="stu-analytics" class="stu-panel">
-                <h3 style="margin-bottom:12px;">📊 <span data-i18n="my_stats">สถิติของฉัน</span></h3>
+                <h3 style="margin-bottom:12px;">📊 สถิติของฉัน</h3>
+                <!-- Heatmap -->
+                <div class="glass-card" style="padding:14px;margin-bottom:16px;">
+                    <h4 style="margin-bottom:8px;">📊 Heatmap กิจกรรม (90 วัน)</h4>
+                    <div id="heatmap-container" style="display:flex;flex-wrap:wrap;gap:2px;"></div>
+                    <div style="margin-top:8px;display:flex;gap:8px;align-items:center;font-size:0.75rem;color:var(--text-muted);">
+                        <span>น้อย</span>
+                        <div style="width:12px;height:12px;background:rgba(16,185,129,0.1);border-radius:2px;"></div>
+                        <div style="width:12px;height:12px;background:rgba(16,185,129,0.3);border-radius:2px;"></div>
+                        <div style="width:12px;height:12px;background:rgba(16,185,129,0.6);border-radius:2px;"></div>
+                        <div style="width:12px;height:12px;background:#10b981;border-radius:2px;"></div>
+                        <span>มาก</span>
+                    </div>
+                </div>
+                <!-- Charts -->
                 <div class="analytics-chart"><canvas id="quizTrendChart" height="200"></canvas></div>
                 <div class="stat-cards" style="margin-bottom:16px;">
-                    <div class="stat-card"><div class="val" id="my-avg" style="color:#3b82f6;">-</div><div class="lbl" data-i18n="my_avg">คะแนนเฉลี่ย</div></div>
-                    <div class="stat-card"><div class="val" id="class-avg" style="color:#f59e0b;">-</div><div class="lbl" data-i18n="class_avg">เฉลี่ยห้อง</div></div>
-                    <div class="stat-card"><div class="val" id="my-streak" style="color:#10b981;">0</div><div class="lbl" data-i18n="streak">Streak วัน</div></div>
+                    <div class="stat-card"><div class="val" id="my-avg" style="color:#3b82f6;">-</div><div class="lbl">คะแนนเฉลี่ย</div></div>
+                    <div class="stat-card"><div class="val" id="class-avg" style="color:#f59e0b;">-</div><div class="lbl">เฉลี่ยห้อง</div></div>
+                    <div class="stat-card"><div class="val" id="my-streak" style="color:#10b981;">0</div><div class="lbl">Streak วัน</div></div>
                 </div>
                 <div class="badge-progress">
-                    <h4>🏆 <span data-i18n="badge_progress">ความคืบหน้าเหรียญ</span> <span id="badge-count">0/10</span></h4>
+                    <h4>🏆 ความคืบหน้าเหรียญ <span id="badge-count">0/10</span></h4>
                     <div class="badge-progress-bar"><div class="badge-progress-fill" id="badge-fill" style="width:0%"></div></div>
                     <div class="badge-list" id="analytics-badges"></div>
                 </div>
+                <!-- History -->
+                <h3 style="margin:20px 0 12px;">📋 ประวัติแบบทดสอบ</h3>
+                <div id="history-list">กำลังโหลด...</div>
+                <h3 style="margin:20px 0 12px;">🗓️ ประวัติเช็คชื่อ</h3>
+                <div id="attendance-list">กำลังโหลด...</div>
             </div>
 
-            <!-- Progress Dashboard Panel -->
+            <!-- Progress Panel (merged: progress + QR + goals + avatar) -->
             <div id="stu-progress" class="stu-panel">
                 <h3 style="margin-bottom:16px;">📈 ความก้าวหน้าของฉัน</h3>
                 <div class="stat-cards" style="margin-bottom:16px;">
@@ -248,79 +266,36 @@
                     <h4 style="margin:0 0 8px;">🎯 ควรทบทวน</h4>
                     <div id="progress-weaknesses" class="badge-list"></div>
                 </div>
-                <button class="btn-glow btn-full" onclick="exportProgressCSV()"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
-                <button class="btn-glow btn-full" style="background:#6366f1;margin-top:8px;" onclick="downloadReportCard()"><i class="fa-solid fa-file-pdf"></i> ดาวน์โหลดใบรายงานผล (PDF)</button>
-                <div style="margin-top:12px;">
+                <!-- Actions Row -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+                    <button class="btn-glow btn-full" onclick="exportProgressCSV()"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+                    <button class="btn-glow btn-full" style="background:#6366f1;" onclick="downloadReportCard()"><i class="fa-solid fa-file-pdf"></i> ใบรายงานผล PDF</button>
+                </div>
+                <!-- Avatar Upload -->
+                <div class="glass-card" style="padding:14px;margin-bottom:16px;">
                     <label style="font-size:0.85rem;color:var(--text-muted);">📸 อัปโหลดรูปโปรไฟล์:</label>
                     <input type="file" accept="image/*" id="avatar-upload" onchange="uploadAvatar()" style="margin-top:4px;font-size:0.8rem;color:var(--text-muted);">
                 </div>
-            </div>
-
-            <!-- Homework Panel -->
-            <div id="stu-homework" class="stu-panel">
-                <h3 style="margin-bottom:16px;">📝 การบ้านของฉัน</h3>
-                <div id="homework-list"><p style="color:var(--text-muted);text-align:center;">กำลังโหลด...</p></div>
-            </div>
-
-            <!-- Notifications Panel -->
-            <div id="stu-notifications" class="stu-panel">
-                <h3 style="margin-bottom:16px;">🔔 แจ้งเตือน</h3>
-                <div id="notif-list"><p style="color:var(--text-muted);text-align:center;">กำลังโหลด...</p></div>
-            </div>
-
-            <!-- Heatmap Panel -->
-            <div id="stu-heatmap" class="stu-panel">
-                <h3 style="margin-bottom:16px;">📊 Heatmap กิจกรรม (90 วัน)</h3>
-                <div id="heatmap-container" style="display:flex;flex-wrap:wrap;gap:2px;"></div>
-                <div style="margin-top:8px;display:flex;gap:8px;align-items:center;font-size:0.75rem;color:var(--text-muted);">
-                    <span>น้อย</span>
-                    <div style="width:12px;height:12px;background:rgba(16,185,129,0.1);border-radius:2px;"></div>
-                    <div style="width:12px;height:12px;background:rgba(16,185,129,0.3);border-radius:2px;"></div>
-                    <div style="width:12px;height:12px;background:rgba(16,185,129,0.6);border-radius:2px;"></div>
-                    <div style="width:12px;height:12px;background:#10b981;border-radius:2px;"></div>
-                    <span>มาก</span>
-                </div>
-            </div>
-
-            <!-- QR Card Panel -->
-            <div id="stu-qrcard" class="stu-panel">
-                <h3 style="margin-bottom:16px;">📱 QR Code บัตรนักเรียน</h3>
-                <div id="qr-card-content" style="text-align:center;">
-                    <button class="btn-glow btn-full" onclick="loadQRCard()"><i class="fa-solid fa-qrcode"></i> สร้าง QR Code</button>
-                </div>
-            </div>
-
-            <!-- Learning Goals Panel -->
-            <div id="stu-goals" class="stu-panel">
-                <h3 style="margin-bottom:16px;">🎯 เป้าหมายการเรียน</h3>
-                <div id="goals-list"><p style="color:var(--text-muted);text-align:center;">กำลังโหลด...</p></div>
-                <div style="margin-top:16px;padding:12px;border:1px solid var(--glass-border);border-radius:8px;">
-                    <h4 style="margin-bottom:8px;"><i class="fa-solid fa-plus" style="color:#10b981;"></i> เพิ่มเป้าหมายใหม่</h4>
-                    <input class="glass-input" id="goal-title" placeholder="เช่น ทำข้อสอบให้ได้ 90%" style="margin-bottom:8px;">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                        <input class="glass-input" id="goal-target" type="number" placeholder="เป้า (เช่น 90)" value="80">
-                        <input class="glass-input" id="goal-deadline" type="date">
+                <!-- QR Card -->
+                <div class="glass-card" style="padding:14px;margin-bottom:16px;">
+                    <h4 style="margin-bottom:8px;">📱 QR Code บัตรนักเรียน</h4>
+                    <div id="qr-card-content" style="text-align:center;">
+                        <button class="btn-glow btn-full" onclick="loadQRCard()"><i class="fa-solid fa-qrcode"></i> สร้าง QR Code</button>
                     </div>
-                    <button class="btn-glow btn-full" style="margin-top:8px;" onclick="addGoal()"><i class="fa-solid fa-plus"></i> เพิ่มเป้าหมาย</button>
                 </div>
-            </div>
-
-            <!-- Chat Room Panel -->
-            <div id="stu-chatroom" class="stu-panel">
-                <h3 style="margin-bottom:16px;">💬 ห้องแชท</h3>
-                <div id="chat-messages" style="height:300px;overflow-y:auto;border:1px solid var(--glass-border);border-radius:8px;padding:12px;margin-bottom:12px;"></div>
-                <div style="display:flex;gap:8px;">
-                    <input class="glass-input" id="chat-input" placeholder="พิมพ์ข้อความ..." style="margin:0;flex:1;" onkeypress="if(event.key==='Enter')sendChat()">
-                    <button class="btn-glow" onclick="sendChat()" style="padding:10px 14px;"><i class="fa-solid fa-paper-plane"></i></button>
+                <!-- Learning Goals -->
+                <div class="glass-card" style="padding:14px;">
+                    <h4 style="margin-bottom:8px;">🎯 เป้าหมายการเรียน</h4>
+                    <div id="goals-list"><p style="color:var(--text-muted);text-align:center;">กำลังโหลด...</p></div>
+                    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--glass-border);">
+                        <input class="glass-input" id="goal-title" placeholder="เช่น ทำข้อสอบให้ได้ 90%" style="margin-bottom:8px;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <input class="glass-input" id="goal-target" type="number" placeholder="เป้า" value="80">
+                            <input class="glass-input" id="goal-deadline" type="date">
+                        </div>
+                        <button class="btn-glow btn-full" style="margin-top:8px;" onclick="addGoal()"><i class="fa-solid fa-plus"></i> เพิ่มเป้าหมาย</button>
+                    </div>
                 </div>
-            </div>
-
-            <!-- LINE Share Panel -->
-            <div id="stu-lineshare" class="stu-panel">
-                <h3 style="margin-bottom:16px;">📤 แชร์ผ่าน LINE</h3>
-                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:12px;">ส่งรายงานผลการเรียนไปยัง LINE สำหรับผู้ปกครอง</p>
-                <button class="btn-glow btn-full" style="background:#06c755;" onclick="shareToLINE()"><i class="fa-brands fa-line"></i> ส่งรายงานผ่าน LINE</button>
-                <div id="line-share-result" style="margin-top:8px;"></div>
             </div>
         </div>
     </div>
@@ -442,7 +417,7 @@
         try {
             const res = await fetch(`/api/chat/general`);
             const msgs = await res.json();
-            const el = document.getElementById('chat-messages');
+            const el = document.getElementById('chat-messages-main');
             el.innerHTML = msgs.map(m => `<div class="chat-msg">
                 <span class="name ${m.user_role}">${m.user_role === 'teacher' ? '👨‍🏫' : '🎓'} ${m.user_name}</span>
                 <div class="text">${m.message}</div>
@@ -560,7 +535,7 @@
         if (p.style.display === 'flex') { p.style.display = 'none'; } else { p.style.display = 'flex'; }
     }
     function insertEmoji(e) {
-        const input = document.getElementById('chat-input');
+        const input = document.getElementById('chat-input-main');
         input.value += e;
         input.focus();
     }
@@ -638,7 +613,7 @@
     const socket = io();
     socket.on('connect', () => { socket.emit('join_room', 'general'); });
     socket.on('new_message', (msg) => {
-        const el = document.getElementById('chat-messages');
+        const el = document.getElementById('chat-messages-main');
         el.innerHTML += `<div class="chat-msg">
             <span class="name ${msg.user_role}">${msg.user_role === 'teacher' ? '👨‍🏫' : '🎓'} ${msg.user_name}</span>
             <div class="text">${msg.message}</div>
@@ -648,7 +623,7 @@
 
     // Override sendChat to use Socket.io
     window.sendChat = function() {
-        const input = document.getElementById('chat-input');
+        const input = document.getElementById('chat-input-main');
         const msg = input.value.trim();
         if (!msg) return;
         socket.emit('chat_message', { room: 'general', user_name: STUDENT.name, user_role: 'student', message: msg });
@@ -950,50 +925,7 @@
     }
     setTimeout(() => loadGoals(), 800);
 
-    // ===================== SPRINT 9: CHAT ROOM =====================
-    var chatSocket = null;
-    function initChat() {
-        if (!STUDENT || chatSocket) return;
-        const script = document.createElement('script');
-        script.src = '/socket.io/socket.io.js';
-        script.onload = () => {
-            chatSocket = io();
-            const room = 'classroom-' + (STUDENT.classroom_id || 1);
-            chatSocket.emit('join-room', room);
-            chatSocket.on('chat-message', (msg) => {
-                appendChatMessage(msg.sender, msg.message, msg.senderType);
-            });
-            loadChatHistory(room);
-        };
-        document.head.appendChild(script);
-    }
-    async function loadChatHistory(room) {
-        try {
-            const res = await fetch('/api/chat/history/' + room);
-            const msgs = await res.json();
-            const container = document.getElementById('chat-messages');
-            container.innerHTML = '';
-            msgs.forEach(m => appendChatMessage(m.sender, m.message, m.sender_type));
-        } catch(e) {}
-    }
-    function appendChatMessage(sender, message, type) {
-        const container = document.getElementById('chat-messages');
-        const isOwn = STUDENT && sender === STUDENT.name;
-        container.innerHTML += '<div style="margin-bottom:6px;text-align:' + (isOwn ? 'right' : 'left') + ';">' +
-            '<span style="font-size:0.7rem;color:var(--text-muted);">' + (type === 'teacher' ? '👩‍🏫 ' : '') + sender + '</span>' +
-            '<div style="display:inline-block;padding:6px 12px;border-radius:12px;background:' + (isOwn ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.05)') + ';font-size:0.85rem;max-width:80%;">' + message + '</div></div>';
-        container.scrollTop = container.scrollHeight;
-    }
-    function sendChat() {
-        if (!chatSocket || !STUDENT) return;
-        const input = document.getElementById('chat-input');
-        const msg = input.value.trim();
-        if (!msg) return;
-        const room = 'classroom-' + (STUDENT.classroom_id || 1);
-        chatSocket.emit('chat-message', { room, sender: STUDENT.name, message: msg, senderType: 'student' });
-        input.value = '';
-    }
-    setTimeout(() => initChat(), 1000);
+
 
     // ===================== SPRINT 9: LINE SHARE =====================
     async function shareToLINE() {
