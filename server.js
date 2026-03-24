@@ -2025,6 +2025,69 @@ app.post('/api/admin/homework/grade', requireAuth, async (req, res) => {
     } catch (e) { res.json({ success: true, demo: true }); }
 });
 
+// Admin — list all homework with submission counts
+app.get('/api/admin/homework', requireAuth, async (req, res) => {
+    try {
+        const [rows] = await pool.query(`
+            SELECT h.*, 
+                (SELECT COUNT(*) FROM homework_submissions hs WHERE hs.homework_id=h.id AND hs.status='submitted') as pending_count,
+                (SELECT COUNT(*) FROM homework_submissions hs WHERE hs.homework_id=h.id AND hs.status='graded') as graded_count
+            FROM homework h ORDER BY h.created_at DESC
+        `);
+        res.json(rows);
+    } catch (e) {
+        res.json([
+            { id: 1, title: 'แบบฝึกหัดสมการเชิงเส้น', due_date: '2026-03-28', total_points: 10, pending_count: 3, graded_count: 2 },
+            { id: 2, title: 'รายงานเรขาคณิต', due_date: '2026-03-30', total_points: 20, pending_count: 5, graded_count: 0 },
+            { id: 3, title: 'โจทย์เศษส่วน 20 ข้อ', due_date: '2026-03-25', total_points: 20, pending_count: 0, graded_count: 8 },
+        ]);
+    }
+});
+
+// Admin — list submissions for a homework
+app.get('/api/admin/homework/:id/submissions', requireAuth, async (req, res) => {
+    try {
+        const [rows] = await pool.query(`
+            SELECT hs.*, s.name as student_name, s.student_id as student_code
+            FROM homework_submissions hs JOIN students s ON hs.student_id=s.id
+            WHERE hs.homework_id=? ORDER BY hs.submitted_at DESC
+        `, [req.params.id]);
+        res.json(rows);
+    } catch (e) {
+        res.json([
+            { id: 1, student_name: 'สมชาย ใจดี', student_code: 'S001', status: 'submitted', grade: null, submitted_at: '2026-03-24T10:30:00' },
+            { id: 2, student_name: 'สมหญิง เก่งมาก', student_code: 'S002', status: 'graded', grade: 9, submitted_at: '2026-03-24T09:15:00' },
+            { id: 3, student_name: 'วิชัย ตั้งใจ', student_code: 'S003', status: 'submitted', grade: null, submitted_at: '2026-03-24T11:00:00' },
+        ]);
+    }
+});
+
+// ===================== STUDENT NOTIFICATIONS =====================
+
+app.get('/api/student/notifications', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM notifications ORDER BY created_at DESC LIMIT 20');
+        res.json(rows.length ? rows : getDefaultNotifications());
+    } catch (e) { res.json(getDefaultNotifications()); }
+});
+
+function getDefaultNotifications() {
+    return [
+        { id: 1, title: '📝 การบ้านใหม่!', message: 'แบบฝึกหัดสมการเชิงเส้น - กำหนดส่ง 28 มี.ค.', type: 'homework', is_read: false, created_at: new Date().toISOString() },
+        { id: 2, title: '🏆 ผลสอบออกแล้ว!', message: 'เรขาคณิต ม.1 - ดูคะแนนที่แท็บประวัติ', type: 'quiz', is_read: false, created_at: new Date(Date.now()-3600000).toISOString() },
+        { id: 3, title: '📢 ประกาศ', message: 'งดสอนวันจันทร์ที่ 31 มี.ค. ครูไปอบรม', type: 'announcement', is_read: true, created_at: new Date(Date.now()-86400000).toISOString() },
+        { id: 4, title: '⭐ เหรียญใหม่!', message: 'คุณได้รับเหรียญ "นักเรียนขยัน" จากการเข้าเรียนครบ 5 วัน', type: 'system', is_read: true, created_at: new Date(Date.now()-172800000).toISOString() },
+        { id: 5, title: '🤖 AI Quiz ใหม่!', message: 'ข้อสอบ "ทฤษฎีบทพีทาโกรัส" 5 ข้อ พร้อมทำแล้ว!', type: 'quiz', is_read: false, created_at: new Date(Date.now()-86400000*2).toISOString() },
+    ];
+}
+
+app.post('/api/student/notifications/:id/read', async (req, res) => {
+    try {
+        await pool.query('UPDATE notifications SET is_read=TRUE WHERE id=?', [req.params.id]);
+        res.json({ success: true });
+    } catch (e) { res.json({ success: true }); }
+});
+
 // ===================== AI QUIZ GENERATOR =====================
 
 app.post('/api/admin/ai-generate-quiz', requireAuth, async (req, res) => {

@@ -1083,3 +1083,65 @@ async function toggleSchedule(enabled) {
         result.textContent = data.success ? (enabled ? '⏰ ' : '⏹️ ') + data.message : '❌ ' + (data.error || 'เกิดข้อผิดพลาด');
     } catch(e) { result.style.display='block'; result.style.background='rgba(239,68,68,0.2)'; result.textContent='❌ '+e.message; }
 }
+
+// ===================== HOMEWORK GRADING =====================
+
+async function loadAdminHomework() {
+    const TOKEN = localStorage.getItem('admin_token');
+    const list = document.getElementById('admin-hw-list');
+    list.innerHTML = '<p style="text-align:center;color:var(--text-muted);">กำลังโหลด...</p>';
+    try {
+        const res = await fetch('/api/admin/homework', { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+        const data = await res.json();
+        list.innerHTML = data.map(function(hw) {
+            return '<div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">' +
+                '<div><strong>' + hw.title + '</strong><br>' +
+                '<span style="font-size:0.8rem;color:var(--text-muted);">📅 ' + hw.due_date + ' | ' + hw.total_points + ' คะแนน</span><br>' +
+                '<span style="font-size:0.75rem;color:#f59e0b;">⏳ รอตรวจ: ' + hw.pending_count + '</span> &nbsp;' +
+                '<span style="font-size:0.75rem;color:#10b981;">✅ ตรวจแล้ว: ' + hw.graded_count + '</span></div>' +
+                '<button class="btn-glow" style="padding:6px 14px;font-size:0.8rem;" onclick="viewSubmissions(' + hw.id + ',\'' + hw.title.replace(/'/g, "\\'") + '\')"><i class="fa-solid fa-eye"></i> ดู</button></div>';
+        }).join('') || '<p style="color:var(--text-muted);">ยังไม่มีการบ้าน</p>';
+    } catch(e) { list.innerHTML = '<p style="color:#ef4444;">❌ ' + e.message + '</p>'; }
+}
+
+async function viewSubmissions(hwId, title) {
+    const TOKEN = localStorage.getItem('admin_token');
+    const panel = document.getElementById('admin-hw-submissions');
+    const titleEl = document.getElementById('admin-hw-sub-title');
+    const list = document.getElementById('admin-hw-sub-list');
+    panel.style.display = 'block';
+    titleEl.textContent = '📋 ผู้ส่ง: ' + title;
+    list.innerHTML = '<p style="text-align:center;color:var(--text-muted);">กำลังโหลด...</p>';
+    try {
+        const res = await fetch('/api/admin/homework/' + hwId + '/submissions', { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+        const data = await res.json();
+        list.innerHTML = data.map(function(sub) {
+            if (sub.status === 'graded') {
+                return '<div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:8px;padding:10px;margin-bottom:6px;font-size:0.85rem;">' +
+                    '<strong>' + sub.student_name + '</strong> (' + sub.student_code + ') — ✅ ' + sub.grade + ' คะแนน</div>';
+            }
+            return '<div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:10px;margin-bottom:6px;font-size:0.85rem;">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+                '<span><strong>' + sub.student_name + '</strong> (' + sub.student_code + ') — ⏳ รอตรวจ</span>' +
+                '<div style="display:flex;gap:6px;align-items:center;">' +
+                '<input type="number" class="glass-input" style="width:60px;padding:4px 8px;" id="grade-' + sub.id + '" placeholder="คะแนน" min="0">' +
+                '<button class="btn-glow" style="padding:4px 10px;font-size:0.8rem;" onclick="gradeSubmission(' + sub.id + ')">✅</button>' +
+                '</div></div></div>';
+        }).join('') || '<p style="color:var(--text-muted);">ยังไม่มีคนส่ง</p>';
+    } catch(e) { list.innerHTML = '<p style="color:#ef4444;">❌ ' + e.message + '</p>'; }
+}
+
+async function gradeSubmission(subId) {
+    const TOKEN = localStorage.getItem('admin_token');
+    const grade = document.getElementById('grade-' + subId)?.value;
+    if (!grade) return alert('กรุณาใส่คะแนน');
+    try {
+        await fetch('/api/admin/homework/grade', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN },
+            body: JSON.stringify({ submission_id: subId, grade: parseInt(grade), feedback: '' })
+        });
+        alert('✅ ให้คะแนนสำเร็จ!');
+        loadAdminHomework();
+    } catch(e) { alert('❌ ' + e.message); }
+}

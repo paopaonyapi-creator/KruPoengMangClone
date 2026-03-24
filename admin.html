@@ -519,6 +519,18 @@
                 <div id="hw-result" style="display:none;padding:12px;border-radius:8px;font-size:0.9rem;margin-top:12px;"></div>
             </div>
 
+            <!-- Homework Grading Dashboard -->
+            <div class="glass-card" style="margin-top:24px;max-width:700px;">
+                <h3><i class="fa-solid fa-clipboard-check" style="color:#3b82f6;"></i> ตรวจการบ้าน</h3>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">ดูรายการที่นักเรียนส่ง + ให้คะแนน</p>
+                <button class="btn-glow btn-full" style="background:#3b82f6;margin-bottom:16px;" onclick="loadAdminHomework()"><i class="fa-solid fa-sync"></i> โหลดรายการการบ้าน</button>
+                <div id="admin-hw-list"></div>
+                <div id="admin-hw-submissions" style="display:none;margin-top:16px;">
+                    <h4 id="admin-hw-sub-title" style="margin-bottom:12px;"></h4>
+                    <div id="admin-hw-sub-list"></div>
+                </div>
+            </div>
+
             <!-- AI Quiz Generator -->
             <div class="glass-card" style="margin-top:24px;max-width:600px;">
                 <h3><i class="fa-solid fa-robot" style="color:#ec4899;"></i> สร้างข้อสอบด้วย AI</h3>
