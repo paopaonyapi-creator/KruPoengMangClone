@@ -168,6 +168,16 @@ const DEMO = {
         { student_name:'สุดา คณิตเทพ', quizzes_taken:15, avg_percent:85 },
         { student_name:'วิชัย เลขดี', quizzes_taken:9, avg_percent:82 },
     ],
+    quizzes: [
+        { id:1, title:'แบบทดสอบสมการเชิงเส้น ม.1', description:'ทดสอบความรู้เรื่องสมการเชิงเส้นตัวแปรเดียว', time_limit:15, is_active:1 },
+    ],
+    quiz_questions: [
+        { id:1, quiz_id:1, question:'ค่า x จากสมการ 2x + 6 = 14 คือข้อใด?', choice_a:'2', choice_b:'4', choice_c:'6', choice_d:'8', correct_answer:'b' },
+        { id:2, quiz_id:1, question:'สมการ 3x - 9 = 0 มีคำตอบเท่ากับข้อใด?', choice_a:'1', choice_b:'2', choice_c:'3', choice_d:'4', correct_answer:'c' },
+        { id:3, quiz_id:1, question:'ถ้า x + 5 = 12 แล้ว x มีค่าเท่ากับเท่าใด?', choice_a:'5', choice_b:'6', choice_c:'7', choice_d:'8', correct_answer:'c' },
+        { id:4, quiz_id:1, question:'ค่า x จากสมการ 4x = 20 คือข้อใด?', choice_a:'4', choice_b:'5', choice_c:'6', choice_d:'10', correct_answer:'b' },
+        { id:5, quiz_id:1, question:'สมการ 2(x-3) = 10 มีคำตอบเท่ากับข้อใด?', choice_a:'5', choice_b:'6', choice_c:'7', choice_d:'8', correct_answer:'d' },
+    ],
 };
 
 // ===================== PUBLIC APIs =====================
@@ -502,8 +512,8 @@ app.get('/api/attendance', async (req, res) => {
 
 // Get all quizzes
 app.get('/api/quizzes', async (req, res) => {
-    try { const [rows] = await pool.query('SELECT * FROM quizzes ORDER BY id DESC'); res.json(rows); }
-    catch (err) { res.status(500).json({ error: err.message }); }
+    try { const [rows] = await pool.query('SELECT * FROM quizzes ORDER BY id DESC'); res.json(rows.length ? rows : DEMO.quizzes); }
+    catch (err) { res.json(DEMO.quizzes); }
 });
 
 // Get quiz with questions (for taking)
@@ -514,7 +524,14 @@ app.get('/api/quizzes/:id', async (req, res) => {
         const [questions] = await pool.query(
             'SELECT id, question, choice_a, choice_b, choice_c, choice_d FROM quiz_questions WHERE quiz_id=?', [req.params.id]);
         res.json({ ...quiz, questions });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) {
+        // Demo fallback
+        const demoQuiz = DEMO.quizzes.find(q => q.id == req.params.id);
+        if (!demoQuiz) return res.status(404).json({ error: 'Quiz not found' });
+        const questions = DEMO.quiz_questions.filter(q => q.quiz_id == req.params.id)
+            .map(({correct_answer, ...rest}) => rest);
+        res.json({ ...demoQuiz, questions });
+    }
 });
 
 // Create quiz
@@ -544,12 +561,19 @@ app.post('/api/admin/quizzes', requireAuth, async (req, res) => {
 app.post('/api/quizzes/:id/submit', async (req, res) => {
     try {
         const { student_name, answers } = req.body;
-        const [questions] = await pool.query('SELECT * FROM quiz_questions WHERE quiz_id=?', [req.params.id]);
+        let questions;
+        try {
+            [questions] = await pool.query('SELECT * FROM quiz_questions WHERE quiz_id=?', [req.params.id]);
+        } catch(e) {
+            questions = DEMO.quiz_questions.filter(q => q.quiz_id == req.params.id);
+        }
         let score = 0;
         const total = questions.length;
         questions.forEach(q => { if (answers[q.id] === q.correct_answer) score++; });
-        await pool.query('INSERT INTO quiz_results (quiz_id, student_name, score, total, answers) VALUES (?, ?, ?, ?, ?)',
-            [req.params.id, student_name, score, total, JSON.stringify(answers)]);
+        try {
+            await pool.query('INSERT INTO quiz_results (quiz_id, student_name, score, total, answers) VALUES (?, ?, ?, ?, ?)',
+                [req.params.id, student_name, score, total, JSON.stringify(answers)]);
+        } catch(e) { /* DB unavailable, skip save */ }
         res.json({ success: true, score, total, percentage: total > 0 ? Math.round((score/total)*100) : 0 });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -591,15 +615,23 @@ app.get('/api/admin/quiz-result-detail/:resultId', requireAuth, async (req, res)
 app.get('/api/notifications', async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM notifications ORDER BY created_at DESC LIMIT 20');
-        res.json(rows);
-    } catch (err) { res.status(500).json({ error: err.message }); }
+        res.json(rows.length ? rows : [
+            { id:1, title:'ยินดีต้อนรับ', message:'ยินดีต้อนรับสู่ Kru Pug Hub!', type:'info', is_read:false, created_at:new Date().toISOString() },
+            { id:2, title:'แบบทดสอบใหม่', message:'มีแบบทดสอบสมการเชิงเส้น ม.1 ลองทำกัน!', type:'quiz', is_read:false, created_at:new Date().toISOString() },
+        ]);
+    } catch (err) {
+        res.json([
+            { id:1, title:'ยินดีต้อนรับ', message:'ยินดีต้อนรับสู่ Kru Pug Hub!', type:'info', is_read:false, created_at:new Date().toISOString() },
+            { id:2, title:'แบบทดสอบใหม่', message:'มีแบบทดสอบสมการเชิงเส้น ม.1 ลองทำกัน!', type:'quiz', is_read:false, created_at:new Date().toISOString() },
+        ]);
+    }
 });
 
 app.get('/api/notifications/unread-count', async (req, res) => {
     try {
         const [[r]] = await pool.query('SELECT COUNT(*) as c FROM notifications WHERE is_read=FALSE');
         res.json({ count: r.c });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) { res.json({ count: 2 }); }
 });
 
 app.put('/api/notifications/read-all', async (req, res) => {
