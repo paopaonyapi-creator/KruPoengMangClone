@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kru Pug - เช็คชื่อ QR Code</title>
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .checkin-container { max-width:400px; margin:40px auto; padding:0 16px; text-align:center; }
+        .checkin-icon { font-size:5rem; margin-bottom:16px; }
+        .checkin-status { font-size:1.2rem; margin:20px 0; padding:16px; border-radius:12px; }
+        .checkin-success { background:rgba(16,185,129,0.15); border:1px solid #10b981; color:#10b981; }
+        .checkin-error { background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#ef4444; }
+        .checkin-pending { background:rgba(245,158,11,0.15); border:1px solid #f59e0b; color:#f59e0b; }
+    </style>
+</head>
+<body>
+    <div class="dynamic-bg"><div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div></div>
+    <div class="checkin-container">
+        <div class="glass-card" style="padding:32px;">
+            <div class="checkin-icon">📱</div>
+            <h2>เช็คชื่อเข้าเรียน</h2>
+            <p style="color:var(--text-muted);margin-bottom:24px;">กรอกรหัสนักเรียนเพื่อเช็คชื่อ</p>
+            <div id="checkin-form">
+                <div class="form-group"><input class="glass-input" id="stu-id" placeholder="รหัสนักเรียน (เช่น S001)" required></div>
+                <button class="btn-glow btn-full" onclick="doCheckin()" id="checkin-btn"><i class="fa-solid fa-check-circle"></i> เช็คชื่อ</button>
+            </div>
+            <div id="checkin-result" style="display:none;"></div>
+            <p style="margin-top:20px;"><a href="index.html" style="color:var(--text-muted);">&larr; กลับหน้าหลัก</a></p>
+        </div>
+    </div>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const classId = params.get('class');
+        const token = params.get('token');
+        const date = params.get('date');
+
+        if (!classId || !token || !date) {
+            document.getElementById('checkin-form').innerHTML = '<div class="checkin-status checkin-error"><i class="fa-solid fa-times-circle"></i> QR Code ไม่ถูกต้อง</div>';
+        }
+
+        async function doCheckin() {
+            const studentId = document.getElementById('stu-id').value.trim();
+            if (!studentId) return alert('กรุณากรอกรหัสนักเรียน');
+            const btn = document.getElementById('checkin-btn');
+            btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังเช็คชื่อ...';
+            try {
+                const res = await fetch('/api/qr/checkin', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ class_id: classId, student_id: studentId, token, date })
+                });
+                const data = await res.json();
+                const result = document.getElementById('checkin-result');
+                result.style.display = 'block';
+                document.getElementById('checkin-form').style.display = 'none';
+                if (data.success) {
+                    result.innerHTML = `<div class="checkin-icon">✅</div><div class="checkin-status checkin-success"><i class="fa-solid fa-check-circle"></i> ${data.message}</div><p style="color:var(--text-muted);margin-top:12px;">วันที่: ${date}</p>`;
+                } else {
+                    result.innerHTML = `<div class="checkin-icon">❌</div><div class="checkin-status checkin-error"><i class="fa-solid fa-times-circle"></i> ${data.error}</div>`;
+                    document.getElementById('checkin-form').style.display = 'block';
+                }
+            } catch (e) {
+                alert('เกิดข้อผิดพลาด');
+            }
+            btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check-circle"></i> เช็คชื่อ';
+        }
+        if (localStorage.getItem('theme') === 'light') document.documentElement.setAttribute('data-theme', 'light');
+    </script>
+</body>
+</html>

@@ -17,6 +17,7 @@ require('dotenv').config();
 let OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
 let TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 let TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
+let LINE_NOTIFY_TOKEN = process.env.LINE_NOTIFY_TOKEN || '';
 
 const app = express();
 const server = http.createServer(app);
@@ -1529,6 +1530,79 @@ app.get('/api/student/report/:studentId', async (req, res) => {
             summary: { totalQuizzes:2, avgScore:70, presentDays:8, totalDays:10, exp:150, level:3, badges:['🏅 ทดสอบครบ','⭐ เข้าเรียนครบ'] }
         });
     }
+});
+
+// ===================== LINE NOTIFY =====================
+
+app.post('/api/admin/line-notify', requireAuth, async (req, res) => {
+    try {
+        const { message } = req.body;
+        if (!message) return res.status(400).json({ error: 'กรุณากรอกข้อความ' });
+        if (!LINE_NOTIFY_TOKEN) return res.status(400).json({ error: 'LINE Notify ยังไม่ได้ตั้งค่า (LINE_NOTIFY_TOKEN)' });
+        const resp = await fetch('https://notify-api.line.me/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': `Bearer ${LINE_NOTIFY_TOKEN}` },
+            body: `message=${encodeURIComponent(message)}`
+        });
+        const data = await resp.json();
+        res.json({ success: data.status === 200, data });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/admin/line-notify/test', requireAuth, async (req, res) => {
+    req.body.message = req.body.message || '🧪 ทดสอบ LINE Notify จาก Kru Pug Hub - ระบบแจ้งเตือนทำงานปกติ!';
+    // Forward to the main LINE Notify handler
+    const { message } = req.body;
+    if (!LINE_NOTIFY_TOKEN) return res.json({ success: false, error: 'LINE_NOTIFY_TOKEN ยังไม่ได้ตั้งค่า (ตั้งค่าใน .env)' });
+    try {
+        const resp = await fetch('https://notify-api.line.me/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': `Bearer ${LINE_NOTIFY_TOKEN}` },
+            body: `message=${encodeURIComponent(message)}`
+        });
+        const data = await resp.json();
+        res.json({ success: data.status === 200, data });
+    } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+// ===================== QR CODE CHECK-IN =====================
+
+// Generate QR code for a classroom
+app.get('/api/qr/generate/:classroomId', requireAuth, async (req, res) => {
+    try {
+        const classId = req.params.classroomId;
+        const today = new Date().toISOString().split('T')[0];
+        const token = crypto.createHash('md5').update(`${classId}-${today}-krupug`).digest('hex').substr(0, 8);
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        const checkinUrl = `${baseUrl}/checkin.html?class=${classId}&token=${token}&date=${today}`;
+        const qrDataUrl = await QRCode.toDataURL(checkinUrl, { width: 300, margin: 2, color: { dark: '#1a1a2e', light: '#ffffff' } });
+        res.json({ success: true, qr: qrDataUrl, url: checkinUrl, token, date: today, classId });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Student submits check-in via QR
+app.post('/api/qr/checkin', async (req, res) => {
+    try {
+        const { class_id, student_id, token, date } = req.body;
+        // Verify token
+        const today = new Date().toISOString().split('T')[0];
+        const expected = crypto.createHash('md5').update(`${class_id}-${today}-krupug`).digest('hex').substr(0, 8);
+        if (token !== expected) return res.status(400).json({ error: 'QR Code หมดอายุแล้ว' });
+        if (date !== today) return res.status(400).json({ error: 'QR Code ไม่ใช้สำหรับวันนี้' });
+        // Try DB insert
+        try {
+            const [[student]] = await pool.query('SELECT id FROM students WHERE student_id=?', [student_id]);
+            if (!student) return res.status(404).json({ error: 'ไม่พบรหัสนักเรียน' });
+            // Check duplicate
+            const [[existing]] = await pool.query('SELECT id FROM attendance WHERE student_id=? AND date=?', [student.id, today]);
+            if (existing) return res.json({ success: true, message: 'เช็คชื่อแล้ววันนี้', duplicate: true });
+            await pool.query('INSERT INTO attendance (student_id, classroom_id, date, status) VALUES (?,?,?,?)', [student.id, class_id, today, 'present']);
+            res.json({ success: true, message: 'เช็คชื่อสำเร็จ!' });
+        } catch (dbErr) {
+            // Demo fallback
+            res.json({ success: true, message: `เช็คชื่อสำเร็จ! (โหมด Demo) - ${student_id}`, demo: true });
+        }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // Auto-migrate on startup
