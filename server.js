@@ -1565,6 +1565,24 @@ app.post('/api/admin/line-notify/test', requireAuth, async (req, res) => {
     } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
+// Save LINE Notify Token
+app.post('/api/admin/line-notify/save', requireAuth, async (req, res) => {
+    try {
+        const { token } = req.body;
+        if (!token) return res.status(400).json({ error: 'กรุณาใส่ Token' });
+        LINE_NOTIFY_TOKEN = token;
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// LINE Notify Status
+app.get('/api/admin/line-notify/status', requireAuth, async (req, res) => {
+    res.json({
+        hasToken: !!LINE_NOTIFY_TOKEN,
+        token_preview: LINE_NOTIFY_TOKEN ? `${LINE_NOTIFY_TOKEN.substr(0, 8)}...${LINE_NOTIFY_TOKEN.substr(-4)}` : null
+    });
+});
+
 // ===================== QR CODE CHECK-IN =====================
 
 // Generate QR code for a classroom

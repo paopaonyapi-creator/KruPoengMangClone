@@ -880,3 +880,61 @@ async function testTelegram() {
     el.style.background = res.success ? 'rgba(0,136,204,0.15)' : 'rgba(239,68,68,0.15)';
     el.innerHTML = res.success ? `✅ ${res.message}` : `❌ ${res.message || res.error}`;
 }
+
+// ===================== LINE NOTIFY =====================
+
+async function loadLineStatus() {
+    try {
+        const res = await fetch('/api/admin/line-notify/status', { headers: { 'x-admin-token': TOKEN } });
+        const data = await res.json();
+        const el = document.getElementById('line-status');
+        if (el) el.innerHTML = data.hasToken ? `<span style="color:#06c755;">✅ Token ตั้งค่าแล้ว (${data.token_preview})</span>` : '<span style="color:#ef4444;">❌ ยังไม่ได้ตั้งค่า</span>';
+    } catch(e) {}
+}
+
+async function saveLineNotify() {
+    const token = document.getElementById('line-token-input').value.trim();
+    if (!token) return alert('กรุณาใส่ LINE Notify Token');
+    const res = await apiPost('/api/admin/line-notify/save', { token });
+    if (res.success) { alert('บันทึก LINE Notify Token สำเร็จ!'); loadLineStatus(); document.getElementById('line-token-input').value = ''; }
+    else alert(res.error || 'เกิดข้อผิดพลาด');
+}
+
+async function testLineNotify() {
+    const el = document.getElementById('line-result');
+    el.style.display = 'block';
+    el.innerHTML = '⏳ กำลังส่งข้อความทดสอบ...';
+    const res = await apiPost('/api/admin/line-notify/test', {});
+    el.style.background = res.success ? 'rgba(6,199,85,0.15)' : 'rgba(239,68,68,0.15)';
+    el.innerHTML = res.success ? '✅ ส่งข้อความทดสอบสำเร็จ! ตรวจสอบที่ LINE' : `❌ ${res.error || 'เกิดข้อผิดพลาด'}`;
+}
+
+async function sendLineMessage() {
+    const msg = document.getElementById('line-msg').value.trim();
+    if (!msg) return alert('กรุณาพิมพ์ข้อความ');
+    const el = document.getElementById('line-send-result');
+    el.style.display = 'block';
+    el.innerHTML = '⏳ กำลังส่ง...';
+    const res = await apiPost('/api/admin/line-notify', { message: msg });
+    el.style.background = res.success ? 'rgba(6,199,85,0.15)' : 'rgba(239,68,68,0.15)';
+    el.innerHTML = res.success ? '✅ ส่งข้อความสำเร็จ!' : `❌ ${res.error || 'เกิดข้อผิดพลาด'}`;
+    if (res.success) document.getElementById('line-msg').value = '';
+}
+
+// ===================== QR CODE GENERATOR =====================
+
+async function generateQRCheckin() {
+    const classId = document.getElementById('qr-classroom').value;
+    try {
+        const res = await fetch(`/api/qr/generate/${classId}`, { headers: { 'x-admin-token': TOKEN } });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('qr-result').style.display = 'block';
+            document.getElementById('qr-image').src = data.qr;
+            document.getElementById('qr-url').textContent = data.url;
+        } else alert(data.error);
+    } catch(e) { alert('เกิดข้อผิดพลาด'); }
+}
+
+// Load LINE status on page load
+if (typeof loadLineStatus === 'function') setTimeout(loadLineStatus, 500);

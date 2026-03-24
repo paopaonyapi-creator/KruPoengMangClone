@@ -405,6 +405,54 @@
                 </div>
                 <div id="tg-result" style="display:none;padding:12px;border-radius:8px;font-size:0.9rem;"></div>
             </div>
+
+            <!-- LINE Notify Management -->
+            <div class="glass-card" style="margin-top:24px;max-width:600px;">
+                <h3><i class="fa-brands fa-line" style="color:#06c755;"></i> LINE Notify แจ้งเตือน</h3>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">ส่งแจ้งเตือนผ่าน LINE ถึงกลุ่มครูหรือผู้ปกครอง<br><a href="https://notify-bot.line.me/my/" target="_blank" style="color:#06c755;">สร้าง Token ที่ notify-bot.line.me →</a></p>
+                <div class="form-group">
+                    <label>สถานะ</label>
+                    <div id="line-status" style="padding:10px;border-radius:8px;background:rgba(0,0,0,0.2);font-family:monospace;font-size:0.85rem;color:var(--text-muted);">กำลังโหลด...</div>
+                </div>
+                <div class="form-group">
+                    <label>LINE Notify Token</label>
+                    <div style="display:flex;gap:8px;">
+                        <input type="password" class="glass-input" id="line-token-input" placeholder="Bearer token จาก notify-bot.line.me" style="flex:1;margin:0;font-family:monospace;">
+                        <button class="btn-outline" style="padding:8px 12px;" onclick="document.getElementById('line-token-input').type=document.getElementById('line-token-input').type==='password'?'text':'password'" title="แสดง/ซ่อน"><i class="fa-solid fa-eye"></i></button>
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;margin-bottom:16px;">
+                    <button class="btn-glow" style="flex:1;background:#06c755;" onclick="saveLineNotify()"><i class="fa-solid fa-floppy-disk"></i> บันทึก</button>
+                    <button class="btn-glow" style="flex:1;background:#3b82f6;" onclick="testLineNotify()"><i class="fa-solid fa-flask"></i> ทดสอบ</button>
+                </div>
+                <div id="line-result" style="display:none;padding:12px;border-radius:8px;font-size:0.9rem;"></div>
+
+                <hr style="border-color:var(--glass-border);margin:16px 0;">
+                <h4 style="margin-bottom:12px;">📤 ส่งข้อความผ่าน LINE</h4>
+                <div class="form-group"><textarea class="glass-input" id="line-msg" rows="2" placeholder="พิมพ์ข้อความที่ต้องการส่ง..."></textarea></div>
+                <button class="btn-glow btn-full" style="background:#06c755;" onclick="sendLineMessage()"><i class="fa-brands fa-line"></i> ส่งข้อความ LINE</button>
+                <div id="line-send-result" style="display:none;padding:12px;border-radius:8px;font-size:0.9rem;margin-top:12px;"></div>
+            </div>
+
+            <!-- QR Code Generator -->
+            <div class="glass-card" style="margin-top:24px;max-width:600px;">
+                <h3><i class="fa-solid fa-qrcode" style="color:#8b5cf6;"></i> สร้าง QR Code เช็คชื่อ</h3>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">ให้นักเรียนสแกน QR เพื่อเช็คชื่อเข้าเรียน (ใช้ได้เฉพาะวันนี้)</p>
+                <div class="form-group">
+                    <label>ห้องเรียน</label>
+                    <select class="glass-input" id="qr-classroom">
+                        <option value="1">ม.1/1</option>
+                        <option value="2">ม.1/2</option>
+                        <option value="3">ม.2/1</option>
+                        <option value="4">ม.3/1</option>
+                    </select>
+                </div>
+                <button class="btn-glow btn-full" style="background:#8b5cf6;" onclick="generateQRCheckin()"><i class="fa-solid fa-qrcode"></i> สร้าง QR Code</button>
+                <div id="qr-result" style="display:none;text-align:center;margin-top:16px;">
+                    <img id="qr-image" class="qr-img" alt="QR Code">
+                    <p id="qr-url" style="color:var(--text-muted);font-size:0.8rem;word-break:break-all;margin-top:8px;"></p>
+                </div>
+            </div>
         </div>
     </div>
 
