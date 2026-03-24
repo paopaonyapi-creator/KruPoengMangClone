@@ -1361,3 +1361,31 @@ function setThemeColor(color) {
     const saved = localStorage.getItem('krupug_theme_color');
     if (saved) setTimeout(() => setThemeColor(saved), 100);
 })();
+
+// ===================== SPRINT 9: FILE MANAGER =====================
+
+async function loadFiles() {
+    const TOKEN = localStorage.getItem('admin_token');
+    const out = document.getElementById('file-list');
+    out.innerHTML = 'กำลังโหลด...';
+    try {
+        const res = await fetch('/api/admin/files', { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+        const files = await res.json();
+        if (!files.length) { out.innerHTML = '<p style="color:var(--text-muted);">ไม่มีไฟล์</p>'; return; }
+        out.innerHTML = files.map(f => {
+            const size = f.size > 1048576 ? (f.size/1048576).toFixed(1) + ' MB' : (f.size/1024).toFixed(0) + ' KB';
+            return '<div style="padding:6px 10px;border-radius:6px;background:rgba(6,182,212,0.08);margin-bottom:4px;font-size:0.82rem;display:flex;justify-content:space-between;align-items:center;">' +
+                '<div><i class="fa-solid fa-file" style="color:#06b6d4;margin-right:6px;"></i><a href="' + f.url + '" target="_blank" style="color:#06b6d4;">' + f.name + '</a> <span style="color:var(--text-muted);">(' + size + ')</span></div>' +
+                '<button onclick="deleteFile(\'' + f.name + '\')" style="background:#ef4444;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:0.7rem;cursor:pointer;">ลบ</button></div>';
+        }).join('');
+    } catch(e) { out.innerHTML = '<p style="color:#ef4444;">❌ ' + e.message + '</p>'; }
+}
+
+async function deleteFile(name) {
+    if (!confirm('ลบไฟล์ ' + name + '?')) return;
+    const TOKEN = localStorage.getItem('admin_token');
+    try {
+        await fetch('/api/admin/files/' + encodeURIComponent(name), { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + TOKEN } });
+        alert('✅ ลบสำเร็จ'); loadFiles();
+    } catch(e) { alert('❌ ' + e.message); }
+}

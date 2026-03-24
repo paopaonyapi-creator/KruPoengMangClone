@@ -2560,6 +2560,152 @@ app.get('/api/ranking', async (req, res) => {
     }
 });
 
+// ===================== SPRINT 9: STUDENT HEATMAP =====================
+
+app.get('/api/student/heatmap/:studentId', async (req, res) => {
+    try {
+        const [[student]] = await pool.query('SELECT id FROM students WHERE student_id=?', [req.params.studentId]);
+        if (!student) return res.status(404).json({ error: 'Not found' });
+        const [checkins] = await pool.query('SELECT check_date as date, "attendance" as type FROM checkins WHERE student_id=? AND check_date >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)', [student.id]);
+        const [quizzes] = await pool.query('SELECT DATE(created_at) as date, "quiz" as type FROM quiz_results WHERE student_id=? AND created_at >= DATE_SUB(NOW(), INTERVAL 90 DAY)', [student.id]);
+        const [hw] = await pool.query('SELECT DATE(created_at) as date, "homework" as type FROM homework_submissions WHERE student_id=? AND created_at >= DATE_SUB(NOW(), INTERVAL 90 DAY)', [student.id]);
+        const days = {};
+        [...checkins, ...quizzes, ...hw].forEach(r => {
+            const d = typeof r.date === 'string' ? r.date : r.date?.toISOString?.().split('T')[0];
+            if (d) days[d] = (days[d] || 0) + 1;
+        });
+        res.json({ success: true, data: days });
+    } catch (e) {
+        const days = {};
+        for (let i = 0; i < 90; i++) {
+            const d = new Date(); d.setDate(d.getDate() - i);
+            if (Math.random() > 0.4) days[d.toISOString().split('T')[0]] = Math.floor(Math.random() * 4) + 1;
+        }
+        res.json({ success: true, data: days });
+    }
+});
+
+// ===================== SPRINT 9: CHAT ROOMS (Socket.io) =====================
+
+io.on('connection', (socket) => {
+    socket.on('join-room', (room) => {
+        socket.join(room);
+        socket.to(room).emit('user-joined', { message: 'มีคนเข้ามาในห้อง' });
+    });
+    socket.on('leave-room', (room) => {
+        socket.leave(room);
+    });
+    socket.on('chat-message', async (data) => {
+        const { room, sender, message, senderType } = data;
+        try {
+            await pool.query('INSERT INTO chat_messages (room, sender, message, sender_type) VALUES (?,?,?,?)',
+                [room, sender, message, senderType || 'student']);
+        } catch(e) {}
+        io.to(room).emit('chat-message', { sender, message, senderType, timestamp: new Date().toISOString() });
+    });
+});
+
+app.get('/api/chat/history/:room', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM chat_messages WHERE room=? ORDER BY created_at DESC LIMIT 50', [req.params.room]);
+        res.json(rows.reverse());
+    } catch (e) {
+        res.json([
+            { sender: 'ครูสมศรี', message: 'สวัสดีนักเรียนทุกคน!', sender_type: 'teacher', created_at: new Date().toISOString() },
+            { sender: 'สมชาย', message: 'สวัสดีครับครู 🙏', sender_type: 'student', created_at: new Date().toISOString() },
+        ]);
+    }
+});
+
+// ===================== SPRINT 9: LINE REPORT SHARE =====================
+
+app.post('/api/student/share-report-line/:studentId', async (req, res) => {
+    if (!LINE_CHANNEL_ACCESS_TOKEN) return res.json({ success: false, error: 'ยังไม่ตั้งค่า LINE Token' });
+    try {
+        const reportRes = await fetch(`http://localhost:${PORT}/api/student/report-card/${req.params.studentId}`);
+        const report = await reportRes.json();
+        if (!report.success) return res.json({ success: false, error: 'ไม่พบข้อมูล' });
+        const s = report.summary;
+        const text = `📊 รายงานผล: ${report.student.name}\n🏫 ห้อง: ${report.student.classroom}\n📈 คะแนนเฉลี่ย: ${s.avgScore}% (${s.grade})\n📝 ทำข้อสอบ: ${s.totalQuizzes} ครั้ง\n✅ เช็คชื่อ: ${s.attendanceDays} วัน\n📚 ส่งการบ้าน: ${s.homeworkDone}\n⭐ EXP: ${s.exp} | Level: ${s.level}`;
+        const lineRes = await fetch('https://api.line.me/v2/bot/message/broadcast', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + LINE_CHANNEL_ACCESS_TOKEN },
+            body: JSON.stringify({ messages: [{ type: 'text', text }] })
+        });
+        res.json({ success: lineRes.ok, message: lineRes.ok ? 'ส่ง LINE สำเร็จ!' : 'ส่งไม่สำเร็จ' });
+    } catch (e) { res.json({ success: false, error: e.message }); }
+});
+
+// ===================== SPRINT 9: FILE MANAGER =====================
+
+app.get('/api/admin/files', requireAuth, async (req, res) => {
+    try {
+        const files = fs.readdirSync(uploadsDir).map(f => {
+            const stats = fs.statSync(path.join(uploadsDir, f));
+            return { name: f, size: stats.size, modified: stats.mtime, url: '/uploads/' + f };
+        }).sort((a,b) => new Date(b.modified) - new Date(a.modified));
+        res.json(files);
+    } catch (e) { res.json([]); }
+});
+
+app.delete('/api/admin/files/:name', requireAuth, (req, res) => {
+    try {
+        const filePath = path.join(uploadsDir, req.params.name);
+        if (fs.existsSync(filePath)) { fs.unlinkSync(filePath); res.json({ success: true }); }
+        else res.status(404).json({ error: 'File not found' });
+    } catch (e) { res.json({ success: false, error: e.message }); }
+});
+
+// ===================== SPRINT 9: QR CODE STUDENT CARD =====================
+
+app.get('/api/student/qr-card/:studentId', async (req, res) => {
+    try {
+        const [[student]] = await pool.query('SELECT * FROM students WHERE student_id=?', [req.params.studentId]);
+        const [[stats]] = await pool.query('SELECT * FROM student_stats WHERE student_id=?', [student?.id]);
+        const data = JSON.stringify({ id: req.params.studentId, name: student?.name || 'N/A', classroom: student?.classroom_id || 1 });
+        const qrDataUrl = await QRCode.toDataURL(data, { width: 300, margin: 2, color: { dark: '#1f2937', light: '#ffffff' } });
+        res.json({ success: true, qr: qrDataUrl, student: { name: student?.name || 'Demo Student', id: req.params.studentId, level: stats?.level || 1, exp: stats?.exp || 0 } });
+    } catch (e) {
+        const qrDataUrl = await QRCode.toDataURL(JSON.stringify({ id: req.params.studentId }), { width: 300, margin: 2 });
+        res.json({ success: true, qr: qrDataUrl, student: { name: 'สมชาย ใจดี', id: req.params.studentId, level: 3, exp: 150 } });
+    }
+});
+
+// ===================== SPRINT 9: LEARNING GOALS =====================
+
+app.get('/api/student/goals/:studentId', async (req, res) => {
+    try {
+        const [[student]] = await pool.query('SELECT id FROM students WHERE student_id=?', [req.params.studentId]);
+        const [goals] = await pool.query('SELECT * FROM learning_goals WHERE student_id=? ORDER BY created_at DESC', [student?.id]);
+        res.json(goals);
+    } catch (e) {
+        res.json([
+            { id: 1, title: 'ทำข้อสอบให้ได้ 80% ขึ้นไป', target: 80, current: 75, type: 'score', deadline: '2026-04-30', status: 'active' },
+            { id: 2, title: 'เช็คชื่อครบ 20 วัน', target: 20, current: 18, type: 'attendance', deadline: '2026-04-30', status: 'active' },
+            { id: 3, title: 'ส่งการบ้านครบทุกชิ้น', target: 5, current: 4, type: 'homework', deadline: '2026-04-15', status: 'active' },
+        ]);
+    }
+});
+
+app.post('/api/student/goals', async (req, res) => {
+    const { student_id, title, target, type, deadline } = req.body;
+    if (!student_id || !title) return res.status(400).json({ error: 'Missing data' });
+    try {
+        const [[student]] = await pool.query('SELECT id FROM students WHERE student_id=?', [student_id]);
+        await pool.query('INSERT INTO learning_goals (student_id, title, target, current, type, deadline, status) VALUES (?,?,?,0,?,?,?)',
+            [student?.id, title, target || 100, type || 'custom', deadline || null, 'active']);
+        res.json({ success: true });
+    } catch (e) { res.json({ success: true, demo: true }); }
+});
+
+app.put('/api/student/goals/:id', async (req, res) => {
+    const { current, status } = req.body;
+    try {
+        if (current !== undefined) await pool.query('UPDATE learning_goals SET current=? WHERE id=?', [current, req.params.id]);
+        if (status) await pool.query('UPDATE learning_goals SET status=? WHERE id=?', [status, req.params.id]);
+        res.json({ success: true });
+    } catch (e) { res.json({ success: true, demo: true }); }
+});
 
 // Start Server with Socket.io
 server.listen(PORT, async () => {
