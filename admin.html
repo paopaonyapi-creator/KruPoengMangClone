@@ -571,6 +571,32 @@
                 <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">ดาวน์โหลดข้อมูลเช็คชื่อเป็น CSV</p>
                 <button class="btn-glow btn-full" style="background:#10b981;" onclick="window.location.href='/api/admin/attendance/export?token='+localStorage.getItem('admin_token')"><i class="fa-solid fa-download"></i> Export เช็คชื่อ (.CSV)</button>
             </div>
+
+            <!-- Dashboard Analytics Charts -->
+            <div class="glass-card" style="margin-top:24px;max-width:700px;">
+                <h3><i class="fa-solid fa-chart-line" style="color:#6366f1;"></i> Dashboard Analytics</h3>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">กราฟสรุปผลภาพรวม</p>
+                <button class="btn-glow btn-full" style="background:#6366f1;margin-bottom:16px;" onclick="loadDashboardStats()"><i class="fa-solid fa-chart-bar"></i> โหลดกราฟ</button>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    <div><canvas id="chart-attendance" height="200"></canvas></div>
+                    <div><canvas id="chart-quiz-avg" height="200"></canvas></div>
+                </div>
+                <div id="hw-completion-bars" style="margin-top:16px;"></div>
+            </div>
+
+            <!-- Quiz Analytics -->
+            <div class="glass-card" style="margin-top:24px;max-width:700px;">
+                <h3><i class="fa-solid fa-chart-pie" style="color:#ec4899;"></i> สถิติแบบทดสอบ</h3>
+                <button class="btn-glow btn-full" style="background:#ec4899;margin-bottom:16px;" onclick="loadQuizAnalytics()"><i class="fa-solid fa-magnifying-glass-chart"></i> โหลดสถิติ</button>
+                <div id="quiz-analytics-table"></div>
+            </div>
+
+            <!-- Data Backup -->
+            <div class="glass-card" style="margin-top:24px;max-width:600px;">
+                <h3><i class="fa-solid fa-database" style="color:#f59e0b;"></i> สำรองข้อมูล</h3>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">ดาวน์โหลดข้อมูลทั้งหมดเป็น JSON</p>
+                <button class="btn-glow btn-full" style="background:#f59e0b;" onclick="window.location.href='/api/admin/backup?token='+localStorage.getItem('admin_token')"><i class="fa-solid fa-cloud-arrow-down"></i> ดาวน์โหลด Backup (JSON)</button>
+            </div>
         </div>
     </div>
 

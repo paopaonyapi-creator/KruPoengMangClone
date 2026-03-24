@@ -3,144 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kru Pug - ระบบครู</title>
+    <title>Teacher Portal - Kru Pug Hub</title>
     <link rel="stylesheet" href="index.css">
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .teacher-body { max-width:1000px; margin:40px auto; padding:0 20px; }
+        body { min-height:100vh; background:var(--bg-primary); color:var(--text-primary); font-family:'Segoe UI',Tahoma,sans-serif; }
+        .teacher-container { max-width:900px; margin:0 auto; padding:24px; }
         .login-card { max-width:400px; margin:80px auto; text-align:center; }
-        .login-card h2 { margin-bottom:8px; }
-        .login-card p { color:var(--text-muted); margin-bottom:24px; font-size:0.9rem; }
-        .dashboard-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin-bottom:24px; }
-        .dash-card { text-align:center; padding:14px; }
-        .dash-card .dash-num { font-size:2rem; font-weight:700; }
-        .dash-card .dash-label { color:var(--text-muted); font-size:0.8rem; }
-        .data-table { width:100%; border-collapse:collapse; margin-top:12px; font-size:0.9rem; }
-        .data-table th, .data-table td { padding:8px; text-align:left; border-bottom:1px solid var(--glass-border); }
-        .data-table th { color:var(--primary); }
+        .form-group { margin-bottom:16px; text-align:left; }
+        .form-group label { display:block; margin-bottom:6px; font-weight:600; font-size:0.85rem; }
+        .glass-input { width:100%; padding:10px 14px; border:1px solid var(--glass-border); border-radius:8px; background:var(--glass-bg); color:var(--text-primary); font-size:1rem; box-sizing:border-box; }
+        .btn-glow { padding:12px 24px; border:none; border-radius:10px; font-size:1rem; font-weight:600; color:#fff; cursor:pointer; width:100%; }
+        .classroom-card { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:12px; padding:16px; margin-bottom:12px; cursor:pointer; transition:transform 0.2s; }
+        .classroom-card:hover { transform:translateY(-2px); border-color:#a855f7; }
+        .student-row { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:8px; margin-bottom:6px; background:var(--glass-bg); border:1px solid var(--glass-border); }
+        .badge { display:inline-block; padding:2px 8px; border-radius:6px; font-size:0.7rem; font-weight:600; }
+        .back-btn { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:0.9rem; margin-bottom:16px; }
+        .back-btn:hover { color:var(--text-primary); }
+        @media (max-width:600px) { .teacher-container { padding:12px; } .student-row { flex-direction:column; gap:8px; align-items:flex-start; } }
     </style>
 </head>
 <body>
-    <div class="dynamic-bg"><div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div></div>
-
-    <!-- Floating Utils -->
-    <div class="floating-utils">
-        <button onclick="const c=document.documentElement.getAttribute('data-theme')||'dark';const n=c==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);localStorage.setItem('theme',n);this.textContent=n==='light'?'☀️':'🌙'">🌙</button>
-        <button class="lang-toggle-btn" onclick="toggleKrupugLang()">🇹🇭</button>
-    </div>
-
-    <!-- Login -->
-    <div id="teacher-login">
-        <div class="login-card glass-card">
-            <div style="font-size:3rem;margin-bottom:16px;">👨‍🏫</div>
-            <h2 data-i18n="teacher_title">ระบบครู</h2>
-            <p data-i18n="teacher_desc">เข้าสู่ระบบด้วยอีเมลและรหัสผ่าน</p>
-            <div class="form-group"><input type="email" class="glass-input" id="t-email" data-i18n-placeholder="teacher_email" placeholder="อีเมล"></div>
-            <div class="form-group"><input type="password" class="glass-input" id="t-pass" data-i18n-placeholder="teacher_pass" placeholder="รหัสผ่าน"></div>
-            <button class="btn-glow btn-full" onclick="teacherLogin()"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="login">เข้าสู่ระบบ</span></button>
-            <p id="t-error" style="color:#ef4444;display:none;margin-top:12px;"></p>
-            <a href="index.html" style="color:var(--text-muted);display:block;margin-top:16px;" data-i18n="back">← กลับหน้าหลัก</a>
+    <div class="teacher-container">
+        <div id="teacher-login" class="login-card glass-card">
+            <h2><i class="fa-solid fa-chalkboard-user" style="color:#a855f7;"></i></h2>
+            <h2>Teacher Portal</h2>
+            <p style="color:var(--text-muted);margin-bottom:24px;">ล็อกอินด้วยอีเมลและรหัสผ่าน</p>
+            <div class="form-group"><label>อีเมล</label><input class="glass-input" id="t-email" placeholder="teacher@krupug.com" value="teacher@krupug.com"></div>
+            <div class="form-group"><label>รหัสผ่าน</label><input type="password" class="glass-input" id="t-pass" placeholder="รหัสผ่าน" value="1234"></div>
+            <button class="btn-glow" style="background:linear-gradient(135deg,#a855f7,#6366f1);" onclick="teacherLogin()"><i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ</button>
+            <p id="t-error" style="color:#ef4444;font-size:0.85rem;margin-top:12px;display:none;"></p>
+            <p style="margin-top:16px;font-size:0.8rem;color:var(--text-muted);">Demo: teacher@krupug.com / 1234</p>
+            <a href="index.html" style="color:var(--text-muted);font-size:0.85rem;"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</a>
         </div>
-    </div>
-
-    <!-- Dashboard -->
-    <div id="teacher-dashboard" style="display:none;">
-        <div class="teacher-body">
-            <div class="glass-card" style="margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-                <div>
-                    <h2>👨‍🏫 <span id="t-name">ครู</span></h2>
-                    <p style="color:var(--text-muted);">ระบบจัดการห้องเรียน</p>
-                </div>
-                <div>
-                    <a href="index.html" class="btn-outline" style="text-decoration:none;"><i class="fa-solid fa-arrow-left"></i> หน้าเว็บ</a>
-                    <button class="btn-outline" style="border-color:#ef4444;color:#ef4444;margin-left:8px;" onclick="teacherLogout()"><i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="parent_logout">ออก</span></button>
-                </div>
+        <div id="teacher-dashboard" style="display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+                <div><h2><i class="fa-solid fa-chalkboard-user" style="color:#a855f7;"></i> สวัสดี <span id="t-name">ครู</span> 👋</h2>
+                <p style="color:var(--text-muted);">Teacher Portal | <a href="index.html" style="color:#a855f7;">กลับหน้าหลัก</a></p></div>
+                <button onclick="teacherLogout()" style="background:#ef4444;color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i> ออก</button>
             </div>
-
-            <div class="dashboard-grid">
-                <div class="dash-card glass-card"><p class="dash-num" id="td-classrooms" style="color:#8b5cf6;">0</p><p class="dash-label">ห้องเรียน</p></div>
-                <div class="dash-card glass-card"><p class="dash-num" id="td-students" style="color:#10b981;">0</p><p class="dash-label">นักเรียน</p></div>
-                <div class="dash-card glass-card"><p class="dash-num" id="td-attendance" style="color:#f59e0b;">0</p><p class="dash-label">เช็คชื่อวันนี้</p></div>
+            <div id="t-classrooms" class="glass-card" style="padding:20px;">
+                <h3><i class="fa-solid fa-school" style="color:#3b82f6;"></i> ห้องเรียนของฉัน</h3>
+                <div id="t-classroom-list" style="margin-top:16px;">กำลังโหลด...</div>
             </div>
-
-            <!-- Classrooms -->
-            <div class="glass-card" style="margin-bottom:24px;">
-                <h3><i class="fa-solid fa-school" style="color:#8b5cf6;"></i> <span data-i18n="teacher_classrooms">ห้องเรียนของฉัน</span></h3>
-                <div id="t-classrooms-list"></div>
-            </div>
-
-            <!-- Students -->
-            <div class="glass-card" style="margin-bottom:24px;">
-                <h3><i class="fa-solid fa-users" style="color:#10b981;"></i> <span data-i18n="teacher_students">นักเรียน</span></h3>
-                <table class="data-table"><thead><tr><th data-i18n="teacher_id">รหัส</th><th data-i18n="teacher_name">ชื่อ</th><th data-i18n="teacher_room">ห้อง</th></tr></thead>
-                <tbody id="t-students-table"></tbody></table>
-            </div>
-
-            <!-- Today Attendance -->
-            <div class="glass-card">
-                <h3><i class="fa-solid fa-clipboard-check" style="color:#f59e0b;"></i> เช็คชื่อวันนี้</h3>
-                <table class="data-table"><thead><tr><th>ชื่อ</th><th>สถานะ</th></tr></thead>
-                <tbody id="t-att-table"></tbody></table>
+            <div id="t-students" class="glass-card" style="padding:20px;margin-top:16px;display:none;">
+                <button class="back-btn" onclick="document.getElementById('t-students').style.display='none';document.getElementById('t-classrooms').style.display='block';"><i class="fa-solid fa-arrow-left"></i> กลับ</button>
+                <h3 id="t-class-title"></h3>
+                <div id="t-student-list" style="margin-top:16px;"></div>
             </div>
         </div>
     </div>
-
-    <script>
-    const API = '';
-    let teacherToken = localStorage.getItem('teacher_token');
-
-    if (teacherToken) loadDashboard();
-
-    async function teacherLogin() {
-        const email = document.getElementById('t-email').value.trim();
-        const pass = document.getElementById('t-pass').value.trim();
-        if (!email || !pass) return;
-        try {
-            const res = await fetch(`${API}/api/teacher/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email, password:pass}) });
-            const data = await res.json();
-            if (!res.ok) { document.getElementById('t-error').style.display='block'; document.getElementById('t-error').textContent=data.error; return; }
-            teacherToken = data.token;
-            localStorage.setItem('teacher_token', teacherToken);
-            localStorage.setItem('teacher_name', data.teacher.name);
-            loadDashboard();
-        } catch(e) { alert('เกิดข้อผิดพลาด'); }
-    }
-
-    async function loadDashboard() {
-        document.getElementById('teacher-login').style.display='none';
-        document.getElementById('teacher-dashboard').style.display='block';
-        document.getElementById('t-name').textContent = localStorage.getItem('teacher_name') || 'ครู';
-        try {
-            const res = await fetch(`${API}/api/teacher/dashboard`, { headers:{'x-teacher-token':teacherToken} });
-            if (!res.ok) { teacherLogout(); return; }
-            const data = await res.json();
-            document.getElementById('td-classrooms').textContent = data.classrooms.length;
-            document.getElementById('td-students').textContent = data.students.length;
-            document.getElementById('td-attendance').textContent = data.attendance.length;
-            // Classrooms
-            document.getElementById('t-classrooms-list').innerHTML = data.classrooms.length ?
-                data.classrooms.map(c => `<div class="glass-card" style="margin:8px 0;padding:12px;"><strong>${c.name}</strong></div>`).join('') :
-                '<p style="color:var(--text-muted);">ยังไม่มีห้องเรียน — ติดต่อ Admin</p>';
-            // Students
-            document.getElementById('t-students-table').innerHTML = data.students.length ?
-                data.students.map(s => `<tr><td>${s.student_id||'-'}</td><td>${s.name}</td><td>${s.classroom||'-'}</td></tr>`).join('') :
-                '<tr><td colspan="3" style="color:var(--text-muted);">ยังไม่มีนักเรียน</td></tr>';
-            // Attendance
-            document.getElementById('t-att-table').innerHTML = data.attendance.length ?
-                data.attendance.map(a => `<tr><td>${a.student_name}</td><td style="color:${a.status==='present'?'#10b981':a.status==='late'?'#f59e0b':'#ef4444'}">${a.status==='present'?'มาเรียน':a.status==='late'?'สาย':'ขาด'}</td></tr>`).join('') :
-                '<tr><td colspan="2" style="color:var(--text-muted);">ยังไม่มีข้อมูลวันนี้</td></tr>';
-        } catch(e) { console.error(e); }
-    }
-
-    function teacherLogout() {
-        localStorage.removeItem('teacher_token');
-        teacherToken = null;
-        document.getElementById('teacher-login').style.display='block';
-        document.getElementById('teacher-dashboard').style.display='none';
-    }
-    if (localStorage.getItem('theme') === 'light') document.documentElement.setAttribute('data-theme', 'light');
-    </script>
-    <script src="i18n.js"></script>
+<script>
+let teacherToken=localStorage.getItem('teacher_token'),teacherName=localStorage.getItem('teacher_name');
+if(teacherToken&&teacherName)showTeacherDashboard();
+async function teacherLogin(){const e=document.getElementById('t-email').value,p=document.getElementById('t-pass').value,err=document.getElementById('t-error');err.style.display='none';try{const r=await fetch('/api/teacher/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:e,password:p})});const d=await r.json();if(d.success){teacherToken=d.token;teacherName=d.teacher.name;localStorage.setItem('teacher_token',teacherToken);localStorage.setItem('teacher_name',teacherName);showTeacherDashboard();}else{err.textContent=d.error;err.style.display='block';}}catch(x){err.textContent=x.message;err.style.display='block';}}
+function showTeacherDashboard(){document.getElementById('teacher-login').style.display='none';document.getElementById('teacher-dashboard').style.display='block';document.getElementById('t-name').textContent=teacherName;loadMyClassrooms();}
+function teacherLogout(){localStorage.removeItem('teacher_token');localStorage.removeItem('teacher_name');location.reload();}
+async function loadMyClassrooms(){const l=document.getElementById('t-classroom-list');try{const r=await fetch('/api/teacher/my-classrooms',{headers:{'Authorization':'Bearer '+teacherToken}});const d=await r.json();l.innerHTML=d.map(c=>`<div class="classroom-card" onclick="loadStudents(${c.id},'${c.name}')"><div style="display:flex;justify-content:space-between;align-items:center;"><div><strong><i class="fa-solid fa-door-open" style="color:#3b82f6;"></i> ${c.name}</strong></div><span class="badge" style="background:rgba(168,85,247,0.2);color:#a855f7;">${c.student_count} คน</span></div></div>`).join('')||'<p style="color:var(--text-muted);">ไม่มีห้องเรียน</p>';}catch(e){l.innerHTML='<p style="color:#ef4444;">❌ '+e.message+'</p>';}}
+async function loadStudents(id,name){document.getElementById('t-classrooms').style.display='none';document.getElementById('t-students').style.display='block';document.getElementById('t-class-title').innerHTML='<i class="fa-solid fa-users" style="color:#10b981;"></i> '+name;const l=document.getElementById('t-student-list');l.innerHTML='กำลังโหลด...';try{const r=await fetch('/api/teacher/classroom/'+id+'/students',{headers:{'Authorization':'Bearer '+teacherToken}});const d=await r.json();l.innerHTML=d.map(s=>`<div class="student-row"><div><strong>${s.name}</strong><span style="color:var(--text-muted);font-size:0.8rem;margin-left:8px;">${s.student_id}</span></div><div style="display:flex;gap:8px;align-items:center;"><span class="badge" style="background:rgba(245,158,11,0.2);color:#f59e0b;">Lv.${s.level||1}</span><span class="badge" style="background:rgba(16,185,129,0.2);color:#10b981;">${s.avg_score||0}%</span><span class="badge" style="background:rgba(168,85,247,0.2);color:#a855f7;">${s.exp||0} EXP</span></div></div>`).join('')||'<p style="color:var(--text-muted);">ไม่มีนักเรียน</p>';}catch(e){l.innerHTML='<p style="color:#ef4444;">❌ '+e.message+'</p>';}}
+</script>
 </body>
 </html>

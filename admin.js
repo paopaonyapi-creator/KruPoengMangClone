@@ -384,7 +384,7 @@ async function loadStudentCount() {
 }
 
 // ========== ANALYTICS ==========
-let attChart = null, quizChart = null;
+var attChart = null, quizChart = null;
 async function loadAnalytics() {
     try {
         const res = await fetch('/api/admin/analytics', { headers: { 'x-admin-token': TOKEN } });
@@ -1144,4 +1144,73 @@ async function gradeSubmission(subId) {
         alert('✅ ให้คะแนนสำเร็จ!');
         loadAdminHomework();
     } catch(e) { alert('❌ ' + e.message); }
+}
+
+// ===================== DASHBOARD ANALYTICS =====================
+
+var attChart = null, quizAvgChart = null;
+
+async function loadDashboardStats() {
+    const TOKEN = localStorage.getItem('admin_token');
+    try {
+        const res = await fetch('/api/admin/dashboard-stats', { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+        const data = await res.json();
+        // Attendance Trend Chart
+        const ctx1 = document.getElementById('chart-attendance').getContext('2d');
+        if (attChart) attChart.destroy();
+        attChart = new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: data.attendanceTrend.map(d => d.day.slice(5)),
+                datasets: [{ label: 'เช็คชื่อ/วัน', data: data.attendanceTrend.map(d => d.count),
+                    borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4 }]
+            },
+            options: { responsive: true, plugins: { legend: { labels: { color: '#ccc' } } }, scales: { x: { ticks: { color: '#999' } }, y: { ticks: { color: '#999' } } } }
+        });
+        // Quiz Averages Chart
+        const ctx2 = document.getElementById('chart-quiz-avg').getContext('2d');
+        if (quizAvgChart) quizAvgChart.destroy();
+        quizAvgChart = new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: data.quizAverages.map(q => q.title.substring(0,12)),
+                datasets: [{ label: 'คะแนนเฉลี่ย %', data: data.quizAverages.map(q => q.avg_score),
+                    backgroundColor: ['#a855f7','#3b82f6','#10b981','#f59e0b','#ec4899'] }]
+            },
+            options: { responsive: true, plugins: { legend: { labels: { color: '#ccc' } } }, scales: { x: { ticks: { color: '#999' } }, y: { ticks: { color: '#999' }, max: 100 } } }
+        });
+        // Homework Completion Bars
+        const bars = document.getElementById('hw-completion-bars');
+        bars.innerHTML = '<h4 style="margin-bottom:8px;">📝 อัตราส่งการบ้าน</h4>' + data.homeworkCompletion.map(h => {
+            const pct = h.total ? Math.round((h.submitted / h.total) * 100) : 0;
+            const color = pct >= 80 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444';
+            return '<div style="margin-bottom:8px;"><div style="display:flex;justify-content:space-between;font-size:0.85rem;"><span>' + h.title + '</span><span style="color:' + color + ';">' + h.submitted + '/' + h.total + ' (' + pct + '%)</span></div>' +
+                '<div style="background:rgba(255,255,255,0.1);border-radius:4px;height:8px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:' + color + ';border-radius:4px;transition:width 0.6s;"></div></div></div>';
+        }).join('');
+    } catch(e) { alert('❌ ' + e.message); }
+}
+
+// ===================== QUIZ ANALYTICS =====================
+
+async function loadQuizAnalytics() {
+    const TOKEN = localStorage.getItem('admin_token');
+    const table = document.getElementById('quiz-analytics-table');
+    table.innerHTML = '<p style="text-align:center;color:var(--text-muted);">กำลังโหลด...</p>';
+    try {
+        const res = await fetch('/api/admin/quiz-analytics', { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+        const data = await res.json();
+        table.innerHTML = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.85rem;">' +
+            '<thead><tr style="border-bottom:1px solid var(--glass-border);"><th style="text-align:left;padding:8px;">ข้อสอบ</th><th>ทำ</th><th>เฉลี่ย</th><th>สูงสุด</th><th>ต่ำสุด</th><th>ผ่าน%</th></tr></thead><tbody>' +
+            data.data.map(function(q) {
+                const pc = q.pass_rate || 0;
+                const color = pc >= 80 ? '#10b981' : pc >= 60 ? '#f59e0b' : '#ef4444';
+                return '<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">' +
+                    '<td style="padding:8px;">' + q.title + '</td>' +
+                    '<td style="text-align:center;">' + q.total_attempts + '</td>' +
+                    '<td style="text-align:center;color:#a855f7;font-weight:600;">' + (q.avg_score || 0) + '%</td>' +
+                    '<td style="text-align:center;color:#10b981;">' + (q.highest || 0) + '</td>' +
+                    '<td style="text-align:center;color:#ef4444;">' + (q.lowest || 0) + '</td>' +
+                    '<td style="text-align:center;"><span style="padding:2px 8px;border-radius:6px;background:' + color + '22;color:' + color + ';font-weight:600;">' + pc + '%</span></td></tr>';
+            }).join('') + '</tbody></table></div>';
+    } catch(e) { table.innerHTML = '<p style="color:#ef4444;">❌ ' + e.message + '</p>'; }
 }
