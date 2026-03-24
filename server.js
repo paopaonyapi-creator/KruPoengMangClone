@@ -45,7 +45,7 @@ const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, uploadsDir),
     filename: (req, file, cb) => {
         const ext = path.extname(file.originalname);
-        cb(null, `${Date.now()}-${Math.random().toString(36).substr(2,6)}${ext}`);
+        cb(null, `${Date.now()}-${Math.random().toString(36).substr(2, 6)}${ext}`);
     }
 });
 const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } }); // 50MB max
@@ -90,7 +90,7 @@ app.put('/api/admin/api-key', requireAuth, async (req, res) => {
         // Update .env file
         const envPath = path.join(__dirname, '.env');
         let envContent = '';
-        try { envContent = fs.readFileSync(envPath, 'utf-8'); } catch(e) {}
+        try { envContent = fs.readFileSync(envPath, 'utf-8'); } catch (e) { }
         if (envContent.includes('OPENROUTER_API_KEY=')) {
             envContent = envContent.replace(/OPENROUTER_API_KEY=.*/g, `OPENROUTER_API_KEY=${OPENROUTER_API_KEY}`);
         } else {
@@ -130,53 +130,53 @@ app.delete('/api/admin/api-key', requireAuth, (req, res) => {
         let envContent = fs.readFileSync(envPath, 'utf-8');
         envContent = envContent.replace(/OPENROUTER_API_KEY=.*/g, 'OPENROUTER_API_KEY=');
         fs.writeFileSync(envPath, envContent);
-    } catch(e) {}
+    } catch (e) { }
     res.json({ success: true, message: 'API Key deleted' });
 });
 
 // ===================== DEMO DATA (fallback when DB unavailable) =====================
 const DEMO = {
     systems: [
-        { id:1, ep:'EP.01', title:'ระบบแบบทดสอบออนไลน์', desc_text:'ระบบทำแบบทดสอบคณิตศาสตร์ออนไลน์ พร้อมตรวจคะแนนอัตโนมัติ', icon:'fa-clipboard-check', preview_url:'quiz.html', download_url:'#' },
-        { id:2, ep:'EP.02', title:'ระบบเช็คชื่อนักเรียน', desc_text:'เช็คชื่อเข้าเรียนด้วย QR Code สะดวกรวดเร็ว', icon:'fa-qrcode', preview_url:'student.html', download_url:'#' },
-        { id:3, ep:'EP.03', title:'ระบบจัดการห้องเรียน', desc_text:'จัดการข้อมูลห้องเรียน นักเรียน และผลการเรียน', icon:'fa-school', preview_url:'teacher.html', download_url:'#' },
-        { id:4, ep:'EP.04', title:'ระบบรายงานผู้ปกครอง', desc_text:'ผู้ปกครองดูผลการเรียนและการเข้าเรียนของลูกผ่านมือถือ', icon:'fa-users', preview_url:'parent.html', download_url:'#' },
+        { id: 1, ep: 'EP.01', title: 'ระบบแบบทดสอบออนไลน์', desc_text: 'ระบบทำแบบทดสอบคณิตศาสตร์ออนไลน์ พร้อมตรวจคะแนนอัตโนมัติ', icon: 'fa-clipboard-check', preview_url: 'quiz.html', download_url: '#' },
+        { id: 2, ep: 'EP.02', title: 'ระบบเช็คชื่อนักเรียน', desc_text: 'เช็คชื่อเข้าเรียนด้วย QR Code สะดวกรวดเร็ว', icon: 'fa-qrcode', preview_url: 'student.html', download_url: '#' },
+        { id: 3, ep: 'EP.03', title: 'ระบบจัดการห้องเรียน', desc_text: 'จัดการข้อมูลห้องเรียน นักเรียน และผลการเรียน', icon: 'fa-school', preview_url: 'teacher.html', download_url: '#' },
+        { id: 4, ep: 'EP.04', title: 'ระบบรายงานผู้ปกครอง', desc_text: 'ผู้ปกครองดูผลการเรียนและการเข้าเรียนของลูกผ่านมือถือ', icon: 'fa-users', preview_url: 'parent.html', download_url: '#' },
     ],
     clips: [
-        { id:1, ep:'ตอนที่ 1', title:'สมการเชิงเส้น ม.1', video_url:'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
-        { id:2, ep:'ตอนที่ 2', title:'เศษส่วนและทศนิยม ม.1', video_url:'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
-        { id:3, ep:'ตอนที่ 3', title:'พีทาโกรัส ม.2', video_url:'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+        { id: 1, ep: 'ตอนที่ 1', title: 'สมการเชิงเส้น ม.1', video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+        { id: 2, ep: 'ตอนที่ 2', title: 'เศษส่วนและทศนิยม ม.1', video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+        { id: 3, ep: 'ตอนที่ 3', title: 'พีทาโกรัส ม.2', video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
     ],
     prompts: [
-        { id:1, title:'สร้างโจทย์คณิต', desc_text:'สร้างโจทย์คณิตศาสตร์ระดับ ม.ต้น เรื่องสมการ 10 ข้อ พร้อมเฉลยละเอียด', icon:'fa-calculator' },
-        { id:2, title:'อธิบายแนวคิด', desc_text:'อธิบายแนวคิดเรื่องอัตราส่วนตรีโกณมิติให้นักเรียน ม.3 เข้าใจง่ายๆ พร้อมตัวอย่าง', icon:'fa-lightbulb' },
-        { id:3, title:'วิเคราะห์ข้อสอบ', desc_text:'วิเคราะห์ข้อสอบคณิตศาสตร์ O-NET ม.3 ย้อนหลัง 5 ปี แยกตามมาตรฐาน', icon:'fa-chart-bar' },
+        { id: 1, title: 'สร้างโจทย์คณิต', desc_text: 'สร้างโจทย์คณิตศาสตร์ระดับ ม.ต้น เรื่องสมการ 10 ข้อ พร้อมเฉลยละเอียด', icon: 'fa-calculator' },
+        { id: 2, title: 'อธิบายแนวคิด', desc_text: 'อธิบายแนวคิดเรื่องอัตราส่วนตรีโกณมิติให้นักเรียน ม.3 เข้าใจง่ายๆ พร้อมตัวอย่าง', icon: 'fa-lightbulb' },
+        { id: 3, title: 'วิเคราะห์ข้อสอบ', desc_text: 'วิเคราะห์ข้อสอบคณิตศาสตร์ O-NET ม.3 ย้อนหลัง 5 ปี แยกตามมาตรฐาน', icon: 'fa-chart-bar' },
     ],
     materials: [
-        { id:1, title:'ใบงานสมการเชิงเส้น', desc_text:'ใบงานฝึกทักษะสมการเชิงเส้นตัวแปรเดียว ม.1 จำนวน 20 ข้อ', icon:'fa-file-pdf', file_url:'#' },
-        { id:2, title:'สรุปสูตรคณิต ม.ต้น', desc_text:'สรุปสูตรคณิตศาสตร์ ม.1-3 ครบทุกบท พร้อมตัวอย่าง', icon:'fa-book', file_url:'#' },
+        { id: 1, title: 'ใบงานสมการเชิงเส้น', desc_text: 'ใบงานฝึกทักษะสมการเชิงเส้นตัวแปรเดียว ม.1 จำนวน 20 ข้อ', icon: 'fa-file-pdf', file_url: '#' },
+        { id: 2, title: 'สรุปสูตรคณิต ม.ต้น', desc_text: 'สรุปสูตรคณิตศาสตร์ ม.1-3 ครบทุกบท พร้อมตัวอย่าง', icon: 'fa-book', file_url: '#' },
     ],
     announcements: [
-        { id:1, text:'🎉 ยินดีต้อนรับสู่ Kru Pug Hub — ศูนย์รวมสื่อคณิตศาสตร์!' },
-        { id:2, text:'📢 เปิดให้ทำแบบทดสอบออนไลน์แล้ว กดที่ Quick Links เพื่อเริ่มทำ!' },
-        { id:3, text:'🆕 อัปเดตระบบเช็คชื่อ QR Code เวอร์ชันล่าสุด' },
+        { id: 1, text: '🎉 ยินดีต้อนรับสู่ Kru Pug Hub — ศูนย์รวมสื่อคณิตศาสตร์!' },
+        { id: 2, text: '📢 เปิดให้ทำแบบทดสอบออนไลน์แล้ว กดที่ Quick Links เพื่อเริ่มทำ!' },
+        { id: 3, text: '🆕 อัปเดตระบบเช็คชื่อ QR Code เวอร์ชันล่าสุด' },
     ],
     leaderboard: [
-        { student_name:'สมชาย ใจดี', quizzes_taken:12, avg_percent:95 },
-        { student_name:'สมหญิง เก่งมาก', quizzes_taken:10, avg_percent:92 },
-        { student_name:'นายธน รักเรียน', quizzes_taken:8, avg_percent:88 },
-        { student_name:'สุดา คณิตเทพ', quizzes_taken:15, avg_percent:85 },
-        { student_name:'วิชัย เลขดี', quizzes_taken:9, avg_percent:82 },
+        { student_name: 'สมชาย ใจดี', quizzes_taken: 12, avg_percent: 95 },
+        { student_name: 'สมหญิง เก่งมาก', quizzes_taken: 10, avg_percent: 92 },
+        { student_name: 'นายธน รักเรียน', quizzes_taken: 8, avg_percent: 88 },
+        { student_name: 'สุดา คณิตเทพ', quizzes_taken: 15, avg_percent: 85 },
+        { student_name: 'วิชัย เลขดี', quizzes_taken: 9, avg_percent: 82 },
     ],
     quizzes: [
-        { id:1, title:'แบบทดสอบสมการเชิงเส้น ม.1', description:'ทดสอบความรู้เรื่องสมการเชิงเส้นตัวแปรเดียว', time_limit:15, is_active:1 },
+        { id: 1, title: 'แบบทดสอบสมการเชิงเส้น ม.1', description: 'ทดสอบความรู้เรื่องสมการเชิงเส้นตัวแปรเดียว', time_limit: 15, is_active: 1 },
     ],
     quiz_questions: [
-        { id:1, quiz_id:1, question:'ค่า x จากสมการ 2x + 6 = 14 คือข้อใด?', choice_a:'2', choice_b:'4', choice_c:'6', choice_d:'8', correct_answer:'b' },
-        { id:2, quiz_id:1, question:'สมการ 3x - 9 = 0 มีคำตอบเท่ากับข้อใด?', choice_a:'1', choice_b:'2', choice_c:'3', choice_d:'4', correct_answer:'c' },
-        { id:3, quiz_id:1, question:'ถ้า x + 5 = 12 แล้ว x มีค่าเท่ากับเท่าใด?', choice_a:'5', choice_b:'6', choice_c:'7', choice_d:'8', correct_answer:'c' },
-        { id:4, quiz_id:1, question:'ค่า x จากสมการ 4x = 20 คือข้อใด?', choice_a:'4', choice_b:'5', choice_c:'6', choice_d:'10', correct_answer:'b' },
-        { id:5, quiz_id:1, question:'สมการ 2(x-3) = 10 มีคำตอบเท่ากับข้อใด?', choice_a:'5', choice_b:'6', choice_c:'7', choice_d:'8', correct_answer:'d' },
+        { id: 1, quiz_id: 1, question: 'ค่า x จากสมการ 2x + 6 = 14 คือข้อใด?', choice_a: '2', choice_b: '4', choice_c: '6', choice_d: '8', correct_answer: 'b' },
+        { id: 2, quiz_id: 1, question: 'สมการ 3x - 9 = 0 มีคำตอบเท่ากับข้อใด?', choice_a: '1', choice_b: '2', choice_c: '3', choice_d: '4', correct_answer: 'c' },
+        { id: 3, quiz_id: 1, question: 'ถ้า x + 5 = 12 แล้ว x มีค่าเท่ากับเท่าใด?', choice_a: '5', choice_b: '6', choice_c: '7', choice_d: '8', correct_answer: 'c' },
+        { id: 4, quiz_id: 1, question: 'ค่า x จากสมการ 4x = 20 คือข้อใด?', choice_a: '4', choice_b: '5', choice_c: '6', choice_d: '10', correct_answer: 'b' },
+        { id: 5, quiz_id: 1, question: 'สมการ 2(x-3) = 10 มีคำตอบเท่ากับข้อใด?', choice_a: '5', choice_b: '6', choice_c: '7', choice_d: '8', correct_answer: 'd' },
     ],
 };
 
@@ -225,10 +225,10 @@ app.get('/api/search', async (req, res) => {
         // Fallback: search in demo data
         const q = (req.query.q || '').toLowerCase();
         const results = [
-            ...DEMO.systems.filter(s => s.title.toLowerCase().includes(q)).map(s => ({...s, type:'system'})),
-            ...DEMO.materials.filter(m => m.title.toLowerCase().includes(q)).map(m => ({...m, type:'material'})),
-            ...DEMO.clips.filter(c => c.title.toLowerCase().includes(q)).map(c => ({...c, type:'clip'})),
-            ...DEMO.prompts.filter(p => p.title.toLowerCase().includes(q)).map(p => ({...p, type:'prompt'})),
+            ...DEMO.systems.filter(s => s.title.toLowerCase().includes(q)).map(s => ({ ...s, type: 'system' })),
+            ...DEMO.materials.filter(m => m.title.toLowerCase().includes(q)).map(m => ({ ...m, type: 'material' })),
+            ...DEMO.clips.filter(c => c.title.toLowerCase().includes(q)).map(c => ({ ...c, type: 'clip' })),
+            ...DEMO.prompts.filter(p => p.title.toLowerCase().includes(q)).map(p => ({ ...p, type: 'prompt' })),
         ];
         res.json(results);
     }
@@ -269,7 +269,7 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
         try {
             const [rows] = await pool.query("SELECT setting_value FROM admin_settings WHERE setting_key='admin_password'");
             if (rows.length > 0) dbPass = rows[0].setting_value;
-        } catch(e) { /* DB unavailable, use default */ }
+        } catch (e) { /* DB unavailable, use default */ }
         // Support both plain and bcrypt passwords
         let match = password === dbPass;
         if (!match && dbPass.startsWith('$2')) match = await bcrypt.compare(password, dbPass);
@@ -317,7 +317,7 @@ app.post('/api/admin/systems', requireAuth, async (req, res) => {
         const { ep, title, desc_text, icon, preview_url, download_url } = req.body;
         const [result] = await pool.query(
             'INSERT INTO systems (ep, title, desc_text, icon, preview_url, download_url) VALUES (?, ?, ?, ?, ?, ?)',
-            [ep, title, desc_text, icon||'fa-laptop-code', preview_url||'#', download_url||'#']
+            [ep, title, desc_text, icon || 'fa-laptop-code', preview_url || '#', download_url || '#']
         );
         res.json({ success: true, id: result.insertId });
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -326,7 +326,7 @@ app.post('/api/admin/systems', requireAuth, async (req, res) => {
 app.post('/api/admin/clips', requireAuth, async (req, res) => {
     try {
         const { ep, title, video_url } = req.body;
-        const [result] = await pool.query('INSERT INTO clips (ep, title, video_url) VALUES (?, ?, ?)', [ep, title, video_url||'#']);
+        const [result] = await pool.query('INSERT INTO clips (ep, title, video_url) VALUES (?, ?, ?)', [ep, title, video_url || '#']);
         res.json({ success: true, id: result.insertId });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -335,7 +335,7 @@ app.post('/api/admin/prompts', requireAuth, async (req, res) => {
     try {
         const { title, desc_text, icon } = req.body;
         const [result] = await pool.query('INSERT INTO prompts (title, desc_text, icon) VALUES (?, ?, ?)',
-            [title, desc_text, icon||'fa-robot']);
+            [title, desc_text, icon || 'fa-robot']);
         res.json({ success: true, id: result.insertId });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -344,7 +344,7 @@ app.post('/api/admin/materials', requireAuth, async (req, res) => {
     try {
         const { title, desc_text, icon, file_url } = req.body;
         const [result] = await pool.query('INSERT INTO materials (title, desc_text, icon, file_url) VALUES (?, ?, ?, ?)',
-            [title, desc_text, icon||'fa-file-pdf', file_url||'#']);
+            [title, desc_text, icon || 'fa-file-pdf', file_url || '#']);
         res.json({ success: true, id: result.insertId });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -352,7 +352,7 @@ app.post('/api/admin/materials', requireAuth, async (req, res) => {
 app.post('/api/admin/announcements', requireAuth, async (req, res) => {
     try {
         const { text } = req.body;
-        const [result] = await pool.query('INSERT INTO announcements (text) VALUES (?)', [text||'']);
+        const [result] = await pool.query('INSERT INTO announcements (text) VALUES (?)', [text || '']);
         // Auto-create notification
         await pool.query('INSERT INTO notifications (title, message, type) VALUES (?, ?, ?)',
             ['ข่าวใหม่', text, 'announcement']);
@@ -377,7 +377,7 @@ app.put('/api/admin/systems/:id', requireAuth, async (req, res) => {
     try {
         const { ep, title, desc_text, icon, preview_url, download_url } = req.body;
         await pool.query('UPDATE systems SET ep=?, title=?, desc_text=?, icon=?, preview_url=?, download_url=? WHERE id=?',
-            [ep, title, desc_text, icon||'fa-laptop-code', preview_url||'#', download_url||'#', req.params.id]);
+            [ep, title, desc_text, icon || 'fa-laptop-code', preview_url || '#', download_url || '#', req.params.id]);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -385,7 +385,7 @@ app.put('/api/admin/systems/:id', requireAuth, async (req, res) => {
 app.put('/api/admin/clips/:id', requireAuth, async (req, res) => {
     try {
         const { ep, title, video_url } = req.body;
-        await pool.query('UPDATE clips SET ep=?, title=?, video_url=? WHERE id=?', [ep, title, video_url||'#', req.params.id]);
+        await pool.query('UPDATE clips SET ep=?, title=?, video_url=? WHERE id=?', [ep, title, video_url || '#', req.params.id]);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -393,7 +393,7 @@ app.put('/api/admin/clips/:id', requireAuth, async (req, res) => {
 app.put('/api/admin/prompts/:id', requireAuth, async (req, res) => {
     try {
         const { title, desc_text, icon } = req.body;
-        await pool.query('UPDATE prompts SET title=?, desc_text=?, icon=? WHERE id=?', [title, desc_text, icon||'fa-robot', req.params.id]);
+        await pool.query('UPDATE prompts SET title=?, desc_text=?, icon=? WHERE id=?', [title, desc_text, icon || 'fa-robot', req.params.id]);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -401,7 +401,7 @@ app.put('/api/admin/prompts/:id', requireAuth, async (req, res) => {
 app.put('/api/admin/materials/:id', requireAuth, async (req, res) => {
     try {
         const { title, desc_text, icon, file_url } = req.body;
-        await pool.query('UPDATE materials SET title=?, desc_text=?, icon=?, file_url=? WHERE id=?', [title, desc_text, icon||'fa-file-pdf', file_url||'#', req.params.id]);
+        await pool.query('UPDATE materials SET title=?, desc_text=?, icon=?, file_url=? WHERE id=?', [title, desc_text, icon || 'fa-file-pdf', file_url || '#', req.params.id]);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -423,7 +423,7 @@ app.get('/api/wfh', async (req, res) => {
 app.post('/api/wfh', async (req, res) => {
     try {
         const { name, role } = req.body;
-        const [result] = await pool.query('INSERT INTO wfh_logs (name, role) VALUES (?, ?)', [name, role||'ครูผู้สอน']);
+        const [result] = await pool.query('INSERT INTO wfh_logs (name, role) VALUES (?, ?)', [name, role || 'ครูผู้สอน']);
         res.json({ success: true, id: result.insertId });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -446,7 +446,7 @@ app.get('/api/classrooms', async (req, res) => {
 app.post('/api/admin/classrooms', requireAuth, async (req, res) => {
     try {
         const { name, grade } = req.body;
-        const [result] = await pool.query('INSERT INTO classrooms (name, grade) VALUES (?, ?)', [name, grade||'']);
+        const [result] = await pool.query('INSERT INTO classrooms (name, grade) VALUES (?, ?)', [name, grade || '']);
         // Generate QR code
         const qrUrl = `${req.protocol}://${req.get('host')}/attendance.html?class=${result.insertId}`;
         const qrData = await QRCode.toDataURL(qrUrl);
@@ -472,7 +472,7 @@ app.post('/api/admin/students', requireAuth, async (req, res) => {
     try {
         const { student_id, name, classroom_id } = req.body;
         const [result] = await pool.query('INSERT INTO students (student_id, name, classroom_id) VALUES (?, ?, ?)',
-            [student_id||'', name, classroom_id]);
+            [student_id || '', name, classroom_id]);
         res.json({ success: true, id: result.insertId });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -486,7 +486,7 @@ app.post('/api/attendance/checkin', async (req, res) => {
             'SELECT * FROM attendance WHERE student_id=? AND date=CURDATE()', [student_id]);
         if (existing.length > 0) return res.status(400).json({ error: 'เช็คชื่อวันนี้แล้ว' });
         await pool.query('INSERT INTO attendance (student_id, classroom_id, status) VALUES (?, ?, ?)',
-            [student_id, classroom_id, status||'present']);
+            [student_id, classroom_id, status || 'present']);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -529,7 +529,7 @@ app.get('/api/quizzes/:id', async (req, res) => {
         const demoQuiz = DEMO.quizzes.find(q => q.id == req.params.id);
         if (!demoQuiz) return res.status(404).json({ error: 'Quiz not found' });
         const questions = DEMO.quiz_questions.filter(q => q.quiz_id == req.params.id)
-            .map(({correct_answer, ...rest}) => rest);
+            .map(({ correct_answer, ...rest }) => rest);
         res.json({ ...demoQuiz, questions });
     }
 });
@@ -539,7 +539,7 @@ app.post('/api/admin/quizzes', requireAuth, async (req, res) => {
     try {
         const { title, description, time_limit, questions } = req.body;
         const [result] = await pool.query('INSERT INTO quizzes (title, description, time_limit) VALUES (?, ?, ?)',
-            [title, description||'', time_limit||30]);
+            [title, description || '', time_limit || 30]);
         const quizId = result.insertId;
         if (questions && questions.length > 0) {
             for (const q of questions) {
@@ -564,7 +564,7 @@ app.post('/api/quizzes/:id/submit', async (req, res) => {
         let questions;
         try {
             [questions] = await pool.query('SELECT * FROM quiz_questions WHERE quiz_id=?', [req.params.id]);
-        } catch(e) {
+        } catch (e) {
             questions = DEMO.quiz_questions.filter(q => q.quiz_id == req.params.id);
         }
         let score = 0;
@@ -573,8 +573,8 @@ app.post('/api/quizzes/:id/submit', async (req, res) => {
         try {
             await pool.query('INSERT INTO quiz_results (quiz_id, student_name, score, total, answers) VALUES (?, ?, ?, ?, ?)',
                 [req.params.id, student_name, score, total, JSON.stringify(answers)]);
-        } catch(e) { /* DB unavailable, skip save */ }
-        res.json({ success: true, score, total, percentage: total > 0 ? Math.round((score/total)*100) : 0 });
+        } catch (e) { /* DB unavailable, skip save */ }
+        res.json({ success: true, score, total, percentage: total > 0 ? Math.round((score / total) * 100) : 0 });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -616,13 +616,13 @@ app.get('/api/notifications', async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM notifications ORDER BY created_at DESC LIMIT 20');
         res.json(rows.length ? rows : [
-            { id:1, title:'ยินดีต้อนรับ', message:'ยินดีต้อนรับสู่ Kru Pug Hub!', type:'info', is_read:false, created_at:new Date().toISOString() },
-            { id:2, title:'แบบทดสอบใหม่', message:'มีแบบทดสอบสมการเชิงเส้น ม.1 ลองทำกัน!', type:'quiz', is_read:false, created_at:new Date().toISOString() },
+            { id: 1, title: 'ยินดีต้อนรับ', message: 'ยินดีต้อนรับสู่ Kru Pug Hub!', type: 'info', is_read: false, created_at: new Date().toISOString() },
+            { id: 2, title: 'แบบทดสอบใหม่', message: 'มีแบบทดสอบสมการเชิงเส้น ม.1 ลองทำกัน!', type: 'quiz', is_read: false, created_at: new Date().toISOString() },
         ]);
     } catch (err) {
         res.json([
-            { id:1, title:'ยินดีต้อนรับ', message:'ยินดีต้อนรับสู่ Kru Pug Hub!', type:'info', is_read:false, created_at:new Date().toISOString() },
-            { id:2, title:'แบบทดสอบใหม่', message:'มีแบบทดสอบสมการเชิงเส้น ม.1 ลองทำกัน!', type:'quiz', is_read:false, created_at:new Date().toISOString() },
+            { id: 1, title: 'ยินดีต้อนรับ', message: 'ยินดีต้อนรับสู่ Kru Pug Hub!', type: 'info', is_read: false, created_at: new Date().toISOString() },
+            { id: 2, title: 'แบบทดสอบใหม่', message: 'มีแบบทดสอบสมการเชิงเส้น ม.1 ลองทำกัน!', type: 'quiz', is_read: false, created_at: new Date().toISOString() },
         ]);
     }
 });
@@ -664,9 +664,24 @@ app.get('/api/admin/analytics', requireAuth, async (req, res) => {
         const [[totalStudents]] = await pool.query('SELECT COUNT(*) as c FROM students');
         // Quiz completion rate
         const [[totalResults]] = await pool.query('SELECT COUNT(*) as c FROM quiz_results');
-        res.json({ weeklyAttendance: weeklyAtt, quizScores, classSummary,
-            totalStudents: totalStudents.c, totalQuizAttempts: totalResults.c });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+        res.json({
+            weeklyAttendance: weeklyAtt, quizScores, classSummary,
+            totalStudents: totalStudents.c, totalQuizAttempts: totalResults.c
+        });
+    } catch (err) {
+        // Demo analytics fallback
+        const today = new Date();
+        const demoWeekly = Array.from({length:7}, (_,i) => {
+            const d = new Date(today); d.setDate(d.getDate()-6+i);
+            return { date: d.toISOString().split('T')[0], count: Math.floor(Math.random()*20)+5 };
+        });
+        res.json({
+            weeklyAttendance: demoWeekly,
+            quizScores: [{ title:'สมการเชิงเส้น ม.1', avg_score:78, attempts:12 }],
+            classSummary: [{ name:'ม.1/1', total_checkins:45 }, { name:'ม.1/2', total_checkins:38 }],
+            totalStudents: 60, totalQuizAttempts: 12
+        });
+    }
 });
 
 // ===================== EXPORT CSV =====================
@@ -686,11 +701,20 @@ app.get('/api/admin/export/attendance', requireAuth, async (req, res) => {
         if (rows.length === 0) return res.status(404).send('No data');
         const headers = Object.keys(rows[0]);
         let csv = '\uFEFF' + headers.join(',') + '\n';
-        rows.forEach(r => { csv += headers.map(h => `"${(r[h]||'').toString().replace(/"/g,'""')}"`).join(',') + '\n'; });
+        rows.forEach(r => { csv += headers.map(h => `"${(r[h] || '').toString().replace(/"/g, '""')}"`).join(',') + '\n'; });
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
         res.setHeader('Content-Disposition', `attachment; filename=attendance_${Date.now()}.csv`);
         res.send(csv);
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) {
+        // Demo CSV fallback
+        const csv = '\uFEFF"รหัส","ชื่อ-สกุล","ห้องเรียน","สถานะ","วันที่"\n' +
+            '"S001","สมชาย ใจดี","ม.1/1","present","' + new Date().toISOString().split('T')[0] + '"\n' +
+            '"S002","สมหญิง เก่งมาก","ม.1/1","present","' + new Date().toISOString().split('T')[0] + '"\n' +
+            '"S003","นายธน รักเรียน","ม.1/2","late","' + new Date().toISOString().split('T')[0] + '"\n';
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename=attendance_demo_${Date.now()}.csv`);
+        res.send(csv);
+    }
 });
 
 app.get('/api/admin/export/quiz-results/:quizId', requireAuth, async (req, res) => {
@@ -703,11 +727,20 @@ app.get('/api/admin/export/quiz-results/:quizId', requireAuth, async (req, res) 
         if (rows.length === 0) return res.status(404).send('No data');
         const headers = Object.keys(rows[0]);
         let csv = '\uFEFF' + headers.join(',') + '\n';
-        rows.forEach(r => { csv += headers.map(h => `"${(r[h]||'').toString().replace(/"/g,'""')}"`).join(',') + '\n'; });
+        rows.forEach(r => { csv += headers.map(h => `"${(r[h] || '').toString().replace(/"/g, '""')}"`).join(',') + '\n'; });
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
         res.setHeader('Content-Disposition', `attachment; filename=quiz_results_${Date.now()}.csv`);
         res.send(csv);
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) {
+        // Demo CSV fallback
+        const csv = '\uFEFF"ชื่อ","คะแนน","คะแนนเต็ม","เปอร์เซ็นต์","เวลาส่ง"\n' +
+            '"สมชาย ใจดี","4","5","80","' + new Date().toISOString() + '"\n' +
+            '"สมหญิง เก่งมาก","5","5","100","' + new Date().toISOString() + '"\n' +
+            '"นายธน รักเรียน","3","5","60","' + new Date().toISOString() + '"\n';
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename=quiz_results_demo_${Date.now()}.csv`);
+        res.send(csv);
+    }
 });
 
 // ===================== AI CHAT (OpenRouter) =====================
@@ -737,7 +770,7 @@ app.post('/api/ai/chat', async (req, res) => {
         const aiResponse = data.choices?.[0]?.message?.content || 'ขออภัย ไม่สามารถตอบได้ในขณะนี้';
         // Save to DB
         await pool.query('INSERT INTO ai_chats (user_name, message, response) VALUES (?, ?, ?)',
-            [user_name||'Guest', message, aiResponse]);
+            [user_name || 'Guest', message, aiResponse]);
         res.json({ success: true, response: aiResponse });
     } catch (err) {
         console.error('AI Chat Error:', err);
@@ -762,7 +795,7 @@ app.post('/api/ai/generate-quiz', requireAuth, async (req, res) => {
                 model: 'google/gemini-2.0-flash-001',
                 messages: [{
                     role: 'user',
-                    content: `สร้างข้อสอบคณิตศาสตร์เรื่อง "${topic}" จำนวน ${count||5} ข้อ แบบ 4 ตัวเลือก (a,b,c,d)
+                    content: `สร้างข้อสอบคณิตศาสตร์เรื่อง "${topic}" จำนวน ${count || 5} ข้อ แบบ 4 ตัวเลือก (a,b,c,d)
 ตอบเป็น JSON array เท่านั้น ไม่ต้องมี markdown หรือ code block
 format: [{"question":"...","choice_a":"...","choice_b":"...","choice_c":"...","choice_d":"...","correct_answer":"a"}]`
                 }],
@@ -821,7 +854,7 @@ app.post('/api/admin/schedule', requireAuth, async (req, res) => {
         const { title, event_date, time_start, time_end, type, description } = req.body;
         const [result] = await pool.query(
             'INSERT INTO schedule_events (title, event_date, time_start, time_end, type, description) VALUES (?,?,?,?,?,?)',
-            [title, event_date, time_start||'', time_end||'', type||'class', description||'']);
+            [title, event_date, time_start || '', time_end || '', type || 'class', description || '']);
         res.json({ success: true, id: result.insertId });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -845,8 +878,8 @@ app.post('/api/student/login', loginLimiter, async (req, res) => {
             [student_id]);
         if (!student) return res.status(401).json({ error: 'ไม่พบรหัสนักเรียน' });
         // Support both plain and bcrypt passwords  
-        let match = student.password === (password||'1234');
-        if (!match && student.password?.startsWith('$2')) match = await bcrypt.compare(password||'1234', student.password);
+        let match = student.password === (password || '1234');
+        if (!match && student.password?.startsWith('$2')) match = await bcrypt.compare(password || '1234', student.password);
         if (student.password && !match) {
             return res.status(401).json({ error: 'รหัสผ่านไม่ถูกต้อง' });
         }
@@ -915,7 +948,7 @@ app.post('/api/chat/:room', async (req, res) => {
         if (!message?.trim()) return res.status(400).json({ error: 'Empty message' });
         const [result] = await pool.query(
             'INSERT INTO chat_messages (room, user_name, user_role, message) VALUES (?,?,?,?)',
-            [req.params.room, user_name||'Anonymous', user_role||'student', message.trim()]);
+            [req.params.room, user_name || 'Anonymous', user_role || 'student', message.trim()]);
         res.json({ success: true, id: result.insertId });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -953,7 +986,7 @@ async function awardEXP(studentId, amount, reason) {
             await pool.query('UPDATE student_stats SET exp=?, level=?, badges=?, streak_days=?, last_activity=CURDATE() WHERE student_id=?',
                 [newExp, newLevel, JSON.stringify(badges), streak, studentId]);
         }
-    } catch(e) { console.error('EXP Error:', e); }
+    } catch (e) { console.error('EXP Error:', e); }
 }
 
 app.get('/api/student/stats/:studentId', async (req, res) => {
@@ -1316,7 +1349,7 @@ async function sendTelegram(message) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: 'HTML' })
         });
-    } catch(e) { console.error('Telegram Error:', e.message); }
+    } catch (e) { console.error('Telegram Error:', e.message); }
 }
 
 // Telegram Settings Management
@@ -1335,7 +1368,7 @@ app.post('/api/admin/telegram', requireAuth, (req, res) => {
     // Save to .env
     const envPath = path.join(__dirname, '.env');
     let envContent = '';
-    try { envContent = fs.readFileSync(envPath, 'utf-8'); } catch(e) {}
+    try { envContent = fs.readFileSync(envPath, 'utf-8'); } catch (e) { }
     // Update or add TELEGRAM_BOT_TOKEN
     if (envContent.includes('TELEGRAM_BOT_TOKEN=')) {
         envContent = envContent.replace(/TELEGRAM_BOT_TOKEN=.*/g, `TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}`);
@@ -1365,7 +1398,7 @@ app.post('/api/admin/telegram/test', requireAuth, async (req, res) => {
         const data = await response.json();
         if (data.ok) res.json({ success: true, message: 'Telegram ส่งสำเร็จ!' });
         else res.json({ success: false, message: data.description || 'Token/Chat ID ไม่ถูกต้อง' });
-    } catch(e) { res.json({ success: false, message: e.message }); }
+    } catch (e) { res.json({ success: false, message: e.message }); }
 });
 
 // ===================== PHASE 6: STUDENT SELF-ANALYTICS =====================
@@ -1417,7 +1450,7 @@ app.get('/api/student/report/:studentId', async (req, res) => {
             'SELECT date, status FROM attendance WHERE student_id=? ORDER BY date DESC', [student.id]);
         const [[stats]] = await pool.query('SELECT * FROM student_stats WHERE student_id=?', [student.id]);
         const totalQuizzes = quizResults.length;
-        const avgScore = totalQuizzes > 0 ? Math.round(quizResults.reduce((s,r) => s + r.percent, 0) / totalQuizzes) : 0;
+        const avgScore = totalQuizzes > 0 ? Math.round(quizResults.reduce((s, r) => s + r.percent, 0) / totalQuizzes) : 0;
         const presentDays = attendance.filter(a => a.status === 'present').length;
         const totalDays = attendance.length;
         res.json({
@@ -1456,11 +1489,11 @@ async function autoMigrate() {
         await conn.query(`CREATE TABLE IF NOT EXISTS parent_access (id INT AUTO_INCREMENT PRIMARY KEY, student_id INT UNIQUE, parent_code VARCHAR(20), parent_name VARCHAR(255) DEFAULT 'ผู้ปกครอง', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         await conn.query(`CREATE TABLE IF NOT EXISTS teachers (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), email VARCHAR(255) UNIQUE, password VARCHAR(255) DEFAULT '1234', role ENUM('teacher','admin') DEFAULT 'teacher', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         // Alter tables for new columns (safe to run multiple times)
-        try { await conn.query('ALTER TABLE notifications ADD COLUMN target_classroom_id INT DEFAULT NULL'); } catch(e) {}
-        try { await conn.query('ALTER TABLE classrooms ADD COLUMN teacher_id INT DEFAULT NULL'); } catch(e) {}
-        try { await conn.query('ALTER TABLE schedule_events ADD COLUMN meeting_url TEXT DEFAULT NULL'); } catch(e) {}
+        try { await conn.query('ALTER TABLE notifications ADD COLUMN target_classroom_id INT DEFAULT NULL'); } catch (e) { }
+        try { await conn.query('ALTER TABLE classrooms ADD COLUMN teacher_id INT DEFAULT NULL'); } catch (e) { }
+        try { await conn.query('ALTER TABLE schedule_events ADD COLUMN meeting_url TEXT DEFAULT NULL'); } catch (e) { }
         console.log('Auto-migration complete!');
-    } catch(e) { console.error('Migration error:', e.message); }
+    } catch (e) { console.error('Migration error:', e.message); }
 }
 
 // ===================== SOCKET.IO REAL-TIME CHAT =====================
@@ -1481,7 +1514,7 @@ io.on('connection', (socket) => {
                 user_name: user_name || 'Anonymous', user_role: user_role || 'student',
                 message: message.trim(), created_at: new Date().toISOString()
             });
-        } catch(e) { console.error('Chat Error:', e.message); }
+        } catch (e) { console.error('Chat Error:', e.message); }
     });
 });
 
