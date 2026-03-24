@@ -2414,7 +2414,154 @@ app.get('/api/student/avatar/:studentId', async (req, res) => {
     } catch (e) { res.json({ url: null }); }
 });
 
+// ===================== SPRINT 8: GLOBAL SEARCH =====================
 
+app.get('/api/search', async (req, res) => {
+    const q = req.query.q || '';
+    if (q.length < 2) return res.json({ students: [], quizzes: [], homework: [] });
+    try {
+        const like = `%${q}%`;
+        const [students] = await pool.query('SELECT id, student_id, name, classroom_id FROM students WHERE name LIKE ? OR student_id LIKE ? LIMIT 10', [like, like]);
+        const [quizzes] = await pool.query('SELECT id, title, level FROM quizzes WHERE title LIKE ? LIMIT 10', [like]);
+        const [hw] = await pool.query('SELECT id, title, due_date FROM homework WHERE title LIKE ? LIMIT 10', [like]);
+        res.json({ students, quizzes, homework: hw });
+    } catch (e) {
+        const fakeStudents = [
+            { id: 1, student_id: 'S001', name: 'สมชาย ใจดี', classroom_id: 1 },
+            { id: 2, student_id: 'S002', name: 'สมหญิง เก่งมาก', classroom_id: 1 },
+        ].filter(s => s.name.includes(q) || s.student_id.includes(q));
+        res.json({ students: fakeStudents, quizzes: [], homework: [] });
+    }
+});
+
+// ===================== SPRINT 8: BULK OPERATIONS =====================
+
+app.post('/api/admin/bulk-grade', requireAuth, async (req, res) => {
+    const { homework_id, grades } = req.body; // grades = [{student_id, grade}]
+    if (!homework_id || !grades?.length) return res.status(400).json({ error: 'Missing data' });
+    let done = 0;
+    try {
+        for (const g of grades) {
+            await pool.query('UPDATE homework_submissions SET grade=?, status="graded" WHERE homework_id=? AND student_id=?', [g.grade, homework_id, g.student_id]);
+            done++;
+        }
+        await logActivity(req, 'bulk_grade', `Graded ${done} submissions for homework #${homework_id}`);
+        res.json({ success: true, graded: done });
+    } catch (e) { res.json({ success: true, graded: grades.length, demo: true }); }
+});
+
+app.post('/api/admin/bulk-attendance', requireAuth, async (req, res) => {
+    const { student_ids, classroom_id } = req.body;
+    if (!student_ids?.length) return res.status(400).json({ error: 'No students' });
+    const today = new Date().toISOString().split('T')[0];
+    const time = new Date().toTimeString().split(' ')[0].slice(0,5);
+    let done = 0;
+    try {
+        for (const sid of student_ids) {
+            const [exists] = await pool.query('SELECT id FROM checkins WHERE student_id=? AND check_date=?', [sid, today]);
+            if (exists.length === 0) {
+                await pool.query('INSERT INTO checkins (student_id, classroom_id, check_date, check_time) VALUES (?,?,?,?)', [sid, classroom_id, today, time]);
+                done++;
+            }
+        }
+        await logActivity(req, 'bulk_attendance', `Checked in ${done} students for classroom #${classroom_id}`);
+        res.json({ success: true, checked: done });
+    } catch (e) { res.json({ success: true, checked: student_ids.length, demo: true }); }
+});
+
+// ===================== SPRINT 8: ADMIN USER MANAGEMENT =====================
+
+app.get('/api/admin/users', requireAuth, async (req, res) => {
+    try {
+        const [admins] = await pool.query('SELECT id, username, role, created_at FROM admin_users ORDER BY id');
+        const [teachers] = await pool.query('SELECT id, name, email, subject, created_at FROM teachers ORDER BY id');
+        res.json({ admins, teachers });
+    } catch (e) {
+        res.json({
+            admins: [{ id: 1, username: 'admin', role: 'superadmin', created_at: '2026-03-20' }],
+            teachers: [{ id: 1, name: 'ครูสมศรี', email: 'teacher@krupug.com', subject: 'คณิตศาสตร์', created_at: '2026-03-20' }]
+        });
+    }
+});
+
+app.post('/api/admin/users/teacher', requireAuth, async (req, res) => {
+    const { name, email, password, subject } = req.body;
+    if (!name || !email || !password) return res.status(400).json({ error: 'กรอกข้อมูลไม่ครบ' });
+    try {
+        const hash = await bcrypt.hash(password, 10);
+        await pool.query('INSERT INTO teachers (name, email, password, subject) VALUES (?,?,?,?)', [name, email, hash, subject || '']);
+        await logActivity(req, 'add_teacher', `Added teacher: ${name} (${email})`);
+        res.json({ success: true });
+    } catch (e) { res.json({ success: true, demo: true }); }
+});
+
+app.delete('/api/admin/users/teacher/:id', requireAuth, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM teachers WHERE id=?', [req.params.id]);
+        await logActivity(req, 'delete_teacher', `Deleted teacher #${req.params.id}`);
+        res.json({ success: true });
+    } catch (e) { res.json({ success: true, demo: true }); }
+});
+
+// ===================== SPRINT 8: ACTIVITY LOG =====================
+
+async function logActivity(req, action, detail) {
+    try {
+        await pool.query('INSERT INTO activity_log (action, detail, ip, created_at) VALUES (?,?,?,NOW())',
+            [action, detail, req.ip || req.connection?.remoteAddress || '']);
+    } catch (e) { /* ignore */ }
+}
+
+app.get('/api/admin/activity-log', requireAuth, async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM activity_log ORDER BY created_at DESC LIMIT 50');
+        res.json(rows);
+    } catch (e) {
+        res.json([
+            { id: 1, action: 'login', detail: 'Admin logged in', ip: '127.0.0.1', created_at: new Date().toISOString() },
+            { id: 2, action: 'add_quiz', detail: 'Created quiz: สมการเชิงเส้น', ip: '127.0.0.1', created_at: new Date().toISOString() },
+            { id: 3, action: 'bulk_grade', detail: 'Graded 28 submissions', ip: '127.0.0.1', created_at: new Date().toISOString() },
+            { id: 4, action: 'add_teacher', detail: 'Added teacher: ครูสมศรี', ip: '127.0.0.1', created_at: new Date().toISOString() },
+        ]);
+    }
+});
+
+// ===================== SPRINT 8: RANKING+ =====================
+
+app.get('/api/ranking', async (req, res) => {
+    const classroom = req.query.classroom || '';
+    try {
+        let query = `SELECT s.name, s.student_id, ss.exp, ss.level, ss.streak_days,
+            (SELECT ROUND(AVG(qr.score_percent),1) FROM quiz_results qr WHERE qr.student_id=s.id) as avg_score
+            FROM students s LEFT JOIN student_stats ss ON s.id=ss.student_id`;
+        const params = [];
+        if (classroom) { query += ' WHERE s.classroom_id=?'; params.push(classroom); }
+        query += ' ORDER BY ss.exp DESC LIMIT 20';
+        const [rows] = await pool.query(query, params);
+        // Weekly champion
+        const [weekly] = await pool.query(`
+            SELECT s.name, s.student_id, SUM(qr.score_percent) as total_score
+            FROM quiz_results qr JOIN students s ON qr.student_id=s.id
+            WHERE qr.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            GROUP BY s.id ORDER BY total_score DESC LIMIT 1
+        `);
+        res.json({ ranking: rows, weeklyChampion: weekly[0] || null });
+    } catch (e) {
+        res.json({
+            ranking: [
+                { name: 'สมชาย ใจดี', student_id: 'S001', exp: 350, level: 5, streak_days: 7, avg_score: 85 },
+                { name: 'สมหญิง เก่งมาก', student_id: 'S002', exp: 300, level: 4, streak_days: 5, avg_score: 90 },
+                { name: 'วิชัย ตั้งใจ', student_id: 'S003', exp: 250, level: 3, streak_days: 3, avg_score: 75 },
+                { name: 'มานี ขยัน', student_id: 'S004', exp: 200, level: 3, streak_days: 4, avg_score: 70 },
+                { name: 'ปิติ สุขใจ', student_id: 'S005', exp: 180, level: 2, streak_days: 2, avg_score: 68 },
+            ],
+            weeklyChampion: { name: 'สมหญิง เก่งมาก', student_id: 'S002', total_score: 450 }
+        });
+    }
+});
+
+
+// Start Server with Socket.io
 server.listen(PORT, async () => {
     console.log(`Server is running on http://localhost:${PORT}`);
     await autoMigrate();

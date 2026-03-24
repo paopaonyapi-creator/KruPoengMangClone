@@ -597,6 +597,71 @@
                 <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">ดาวน์โหลดข้อมูลทั้งหมดเป็น JSON</p>
                 <button class="btn-glow btn-full" style="background:#f59e0b;" onclick="window.location.href='/api/admin/backup?token='+localStorage.getItem('admin_token')"><i class="fa-solid fa-cloud-arrow-down"></i> ดาวน์โหลด Backup (JSON)</button>
             </div>
+
+            <!-- Global Search -->
+            <div class="glass-card" style="margin-top:24px;max-width:600px;">
+                <h3><i class="fa-solid fa-magnifying-glass" style="color:#3b82f6;"></i> ค้นหา</h3>
+                <input class="glass-input" id="global-search" placeholder="พิมพ์ชื่อ/รหัสนักเรียน/ข้อสอบ..." oninput="globalSearch(this.value)" style="margin-bottom:12px;">
+                <div id="search-results"></div>
+            </div>
+
+            <!-- Bulk Operations -->
+            <div class="glass-card" style="margin-top:24px;max-width:600px;">
+                <h3><i class="fa-solid fa-layer-group" style="color:#10b981;"></i> Bulk Operations</h3>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:12px;">เช็คชื่อ/ให้คะแนนทั้งห้องพร้อมกัน</p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    <div>
+                        <label style="font-size:0.8rem;">ห้อง:</label>
+                        <input class="glass-input" id="bulk-classroom" placeholder="1" value="1" style="margin-bottom:8px;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem;">รหัสนักเรียน (คั่นด้วย ,):</label>
+                        <input class="glass-input" id="bulk-ids" placeholder="1,2,3" value="1,2,3">
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+                    <button class="btn-glow btn-full" style="background:#10b981;" onclick="bulkAttendance()"><i class="fa-solid fa-users-rectangle"></i> เช็คชื่อรวม</button>
+                    <button class="btn-glow btn-full" style="background:#3b82f6;" onclick="bulkGrade()"><i class="fa-solid fa-list-check"></i> ให้คะแนนรวม</button>
+                </div>
+                <div id="bulk-result" style="display:none;padding:8px;border-radius:8px;margin-top:8px;font-size:0.85rem;"></div>
+            </div>
+
+            <!-- User Management -->
+            <div class="glass-card" style="margin-top:24px;max-width:700px;">
+                <h3><i class="fa-solid fa-users-gear" style="color:#a855f7;"></i> จัดการผู้ใช้</h3>
+                <button class="btn-glow btn-full" style="background:#a855f7;margin-bottom:12px;" onclick="loadUsers()"><i class="fa-solid fa-rotate"></i> โหลดรายชื่อ</button>
+                <div id="user-list"></div>
+                <div style="margin-top:12px;padding:12px;border:1px solid var(--glass-border);border-radius:8px;">
+                    <h4 style="margin-bottom:8px;"><i class="fa-solid fa-user-plus" style="color:#10b981;"></i> เพิ่มครูใหม่</h4>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                        <input class="glass-input" id="new-t-name" placeholder="ชื่อ">
+                        <input class="glass-input" id="new-t-email" placeholder="อีเมล">
+                        <input class="glass-input" id="new-t-pass" placeholder="รหัสผ่าน" type="password">
+                        <input class="glass-input" id="new-t-subject" placeholder="วิชา">
+                    </div>
+                    <button class="btn-glow btn-full" style="background:#10b981;margin-top:8px;" onclick="addTeacher()"><i class="fa-solid fa-plus"></i> เพิ่มครู</button>
+                </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="glass-card" style="margin-top:24px;max-width:700px;">
+                <h3><i class="fa-solid fa-clock-rotate-left" style="color:#ec4899;"></i> Activity Log</h3>
+                <button class="btn-glow btn-full" style="background:#ec4899;margin-bottom:12px;" onclick="loadActivityLog()"><i class="fa-solid fa-list-ul"></i> โหลด Log</button>
+                <div id="activity-log-list"></div>
+            </div>
+
+            <!-- Theme Customizer -->
+            <div class="glass-card" style="margin-top:24px;max-width:600px;">
+                <h3><i class="fa-solid fa-palette" style="color:#f59e0b;"></i> ธีมสี</h3>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:12px;">เลือกสีธีมที่ชอบ</p>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <button onclick="setThemeColor('purple')" style="width:40px;height:40px;border-radius:50%;border:2px solid #a855f7;background:linear-gradient(135deg,#a855f7,#6366f1);cursor:pointer;" title="ม่วง"></button>
+                    <button onclick="setThemeColor('blue')" style="width:40px;height:40px;border-radius:50%;border:2px solid #3b82f6;background:linear-gradient(135deg,#3b82f6,#06b6d4);cursor:pointer;" title="น้ำเงิน"></button>
+                    <button onclick="setThemeColor('green')" style="width:40px;height:40px;border-radius:50%;border:2px solid #10b981;background:linear-gradient(135deg,#10b981,#34d399);cursor:pointer;" title="เขียว"></button>
+                    <button onclick="setThemeColor('pink')" style="width:40px;height:40px;border-radius:50%;border:2px solid #ec4899;background:linear-gradient(135deg,#ec4899,#f472b6);cursor:pointer;" title="ชมพู"></button>
+                    <button onclick="setThemeColor('orange')" style="width:40px;height:40px;border-radius:50%;border:2px solid #f59e0b;background:linear-gradient(135deg,#f59e0b,#fbbf24);cursor:pointer;" title="ส้ม"></button>
+                </div>
+            </div>
         </div>
     </div>
 

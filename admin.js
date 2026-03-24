@@ -1214,3 +1214,150 @@ async function loadQuizAnalytics() {
             }).join('') + '</tbody></table></div>';
     } catch(e) { table.innerHTML = '<p style="color:#ef4444;">❌ ' + e.message + '</p>'; }
 }
+
+// ===================== SPRINT 8: GLOBAL SEARCH =====================
+
+let searchTimer = null;
+function globalSearch(q) {
+    clearTimeout(searchTimer);
+    const out = document.getElementById('search-results');
+    if (q.length < 2) { out.innerHTML = ''; return; }
+    searchTimer = setTimeout(async () => {
+        try {
+            const res = await fetch('/api/search?q=' + encodeURIComponent(q));
+            const data = await res.json();
+            let html = '';
+            if (data.students.length) {
+                html += '<h4 style="font-size:0.85rem;margin:8px 0;">👨‍🎓 นักเรียน</h4>';
+                data.students.forEach(s => { html += '<div style="padding:6px 10px;border-radius:6px;background:rgba(16,185,129,0.1);margin-bottom:4px;font-size:0.85rem;"><strong>' + s.name + '</strong> <span style="color:var(--text-muted);">(' + s.student_id + ')</span></div>'; });
+            }
+            if (data.quizzes.length) {
+                html += '<h4 style="font-size:0.85rem;margin:8px 0;">📝 ข้อสอบ</h4>';
+                data.quizzes.forEach(q => { html += '<div style="padding:6px 10px;border-radius:6px;background:rgba(168,85,247,0.1);margin-bottom:4px;font-size:0.85rem;">' + q.title + ' <span style="color:var(--text-muted);">(Lv.' + q.level + ')</span></div>'; });
+            }
+            if (data.homework.length) {
+                html += '<h4 style="font-size:0.85rem;margin:8px 0;">📋 การบ้าน</h4>';
+                data.homework.forEach(h => { html += '<div style="padding:6px 10px;border-radius:6px;background:rgba(245,158,11,0.1);margin-bottom:4px;font-size:0.85rem;">' + h.title + '</div>'; });
+            }
+            out.innerHTML = html || '<p style="color:var(--text-muted);font-size:0.85rem;">ไม่พบผลลัพธ์</p>';
+        } catch(e) { out.innerHTML = '<p style="color:#ef4444;">❌ Error</p>'; }
+    }, 300);
+}
+
+// ===================== SPRINT 8: BULK OPERATIONS =====================
+
+async function bulkAttendance() {
+    const TOKEN = localStorage.getItem('admin_token');
+    const ids = document.getElementById('bulk-ids').value.split(',').map(s => s.trim()).filter(Boolean);
+    const classroom = document.getElementById('bulk-classroom').value;
+    const out = document.getElementById('bulk-result');
+    try {
+        const res = await fetch('/api/admin/bulk-attendance', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN },
+            body: JSON.stringify({ student_ids: ids, classroom_id: classroom })
+        });
+        const data = await res.json();
+        out.style.display = 'block'; out.style.background = 'rgba(16,185,129,0.15)'; out.style.color = '#10b981';
+        out.textContent = '✅ เช็คชื่อสำเร็จ ' + data.checked + ' คน';
+    } catch(e) { out.style.display='block'; out.style.background='rgba(239,68,68,0.15)'; out.style.color='#ef4444'; out.textContent='❌ '+e.message; }
+}
+
+async function bulkGrade() {
+    const TOKEN = localStorage.getItem('admin_token');
+    const ids = document.getElementById('bulk-ids').value.split(',').map(s => s.trim()).filter(Boolean);
+    const grade = prompt('ให้คะแนนเท่าไร? (0-100)');
+    if (!grade) return;
+    const out = document.getElementById('bulk-result');
+    try {
+        const grades = ids.map(id => ({ student_id: id, grade: parseInt(grade) }));
+        const res = await fetch('/api/admin/bulk-grade', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN },
+            body: JSON.stringify({ homework_id: 1, grades })
+        });
+        const data = await res.json();
+        out.style.display = 'block'; out.style.background = 'rgba(59,130,246,0.15)'; out.style.color = '#3b82f6';
+        out.textContent = '✅ ให้คะแนนสำเร็จ ' + data.graded + ' คน (' + grade + ' คะแนน)';
+    } catch(e) { out.style.display='block'; out.style.background='rgba(239,68,68,0.15)'; out.style.color='#ef4444'; out.textContent='❌ '+e.message; }
+}
+
+// ===================== SPRINT 8: USER MANAGEMENT =====================
+
+async function loadUsers() {
+    const TOKEN = localStorage.getItem('admin_token');
+    const out = document.getElementById('user-list');
+    out.innerHTML = 'กำลังโหลด...';
+    try {
+        const res = await fetch('/api/admin/users', { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+        const data = await res.json();
+        let html = '<h4 style="margin:8px 0;">🔑 Admin</h4>';
+        data.admins.forEach(a => { html += '<div style="padding:6px 10px;border-radius:6px;background:rgba(245,158,11,0.1);margin-bottom:4px;font-size:0.85rem;display:flex;justify-content:space-between;"><span>' + a.username + ' <span style="color:var(--text-muted);">(' + a.role + ')</span></span></div>'; });
+        html += '<h4 style="margin:8px 0;">👩‍🏫 ครู</h4>';
+        data.teachers.forEach(t => { html += '<div style="padding:6px 10px;border-radius:6px;background:rgba(168,85,247,0.1);margin-bottom:4px;font-size:0.85rem;display:flex;justify-content:space-between;align-items:center;"><span>' + t.name + ' <span style="color:var(--text-muted);">(' + t.email + ')</span></span><button onclick="deleteTeacher('+t.id+')" style="background:#ef4444;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:0.75rem;cursor:pointer;">ลบ</button></div>'; });
+        out.innerHTML = html;
+    } catch(e) { out.innerHTML = '<p style="color:#ef4444;">❌ ' + e.message + '</p>'; }
+}
+
+async function addTeacher() {
+    const TOKEN = localStorage.getItem('admin_token');
+    const name = document.getElementById('new-t-name').value;
+    const email = document.getElementById('new-t-email').value;
+    const password = document.getElementById('new-t-pass').value;
+    const subject = document.getElementById('new-t-subject').value;
+    if (!name || !email || !password) return alert('กรอกข้อมูลให้ครบ');
+    try {
+        const res = await fetch('/api/admin/users/teacher', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN },
+            body: JSON.stringify({ name, email, password, subject })
+        });
+        const data = await res.json();
+        if (data.success) { alert('✅ เพิ่มครูสำเร็จ!'); loadUsers(); document.getElementById('new-t-name').value=''; document.getElementById('new-t-email').value=''; document.getElementById('new-t-pass').value=''; document.getElementById('new-t-subject').value=''; }
+    } catch(e) { alert('❌ ' + e.message); }
+}
+
+async function deleteTeacher(id) {
+    if (!confirm('ลบครูนี้?')) return;
+    const TOKEN = localStorage.getItem('admin_token');
+    try {
+        await fetch('/api/admin/users/teacher/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + TOKEN } });
+        alert('✅ ลบสำเร็จ'); loadUsers();
+    } catch(e) { alert('❌ ' + e.message); }
+}
+
+// ===================== SPRINT 8: ACTIVITY LOG =====================
+
+async function loadActivityLog() {
+    const TOKEN = localStorage.getItem('admin_token');
+    const out = document.getElementById('activity-log-list');
+    out.innerHTML = 'กำลังโหลด...';
+    try {
+        const res = await fetch('/api/admin/activity-log', { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+        const data = await res.json();
+        const icons = { login:'🔑', add_quiz:'📝', bulk_grade:'📊', add_teacher:'👩‍🏫', delete_teacher:'🗑️', bulk_attendance:'✅' };
+        out.innerHTML = data.map(log => '<div style="padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.03);margin-bottom:4px;font-size:0.82rem;display:flex;justify-content:space-between;border:1px solid rgba(255,255,255,0.05);"><div>' + (icons[log.action]||'📋') + ' <strong>' + log.action + '</strong> — ' + log.detail + '</div><span style="color:var(--text-muted);font-size:0.75rem;white-space:nowrap;">' + new Date(log.created_at).toLocaleString('th-TH') + '</span></div>').join('') || '<p style="color:var(--text-muted);">ยังไม่มี log</p>';
+    } catch(e) { out.innerHTML = '<p style="color:#ef4444;">❌ ' + e.message + '</p>'; }
+}
+
+// ===================== SPRINT 8: THEME CUSTOMIZER =====================
+
+function setThemeColor(color) {
+    const themes = {
+        purple: { accent: '#a855f7', gradient: 'linear-gradient(135deg,#a855f7,#6366f1)' },
+        blue: { accent: '#3b82f6', gradient: 'linear-gradient(135deg,#3b82f6,#06b6d4)' },
+        green: { accent: '#10b981', gradient: 'linear-gradient(135deg,#10b981,#34d399)' },
+        pink: { accent: '#ec4899', gradient: 'linear-gradient(135deg,#ec4899,#f472b6)' },
+        orange: { accent: '#f59e0b', gradient: 'linear-gradient(135deg,#f59e0b,#fbbf24)' }
+    };
+    const t = themes[color]; if (!t) return;
+    document.documentElement.style.setProperty('--accent', t.accent);
+    document.querySelectorAll('.btn-glow').forEach(btn => {
+        if (!btn.style.background || btn.style.background.includes('gradient')) btn.style.background = t.gradient;
+    });
+    document.querySelectorAll('.admin-tab.active').forEach(tab => { tab.style.background = t.gradient; });
+    localStorage.setItem('krupug_theme_color', color);
+    alert('✅ Theme: ' + color);
+}
+// Auto-apply saved theme
+(function() {
+    const saved = localStorage.getItem('krupug_theme_color');
+    if (saved) setTimeout(() => setThemeColor(saved), 100);
+})();
