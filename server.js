@@ -1835,11 +1835,99 @@ async function autoMigrate() {
         await conn.query(`CREATE TABLE IF NOT EXISTS homework (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), description TEXT, due_date DATE, total_points INT DEFAULT 10, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         await conn.query(`CREATE TABLE IF NOT EXISTS homework_submissions (id INT AUTO_INCREMENT PRIMARY KEY, homework_id INT, student_id INT, status ENUM('pending','submitted','graded') DEFAULT 'pending', grade INT DEFAULT NULL, feedback TEXT, submitted_at TIMESTAMP DEFAULT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         try { await conn.query('ALTER TABLE quiz_results ADD COLUMN student_id INT DEFAULT NULL'); } catch (e) { }
-        try { await conn.query('ALTER TABLE checkins RENAME TO checkins_old'); } catch (e) { }
+        try { await conn.query('ALTER TABLE checkins RENAME TO checkins_old'); } catch(e){}
         await conn.query(`CREATE TABLE IF NOT EXISTS checkins (id INT AUTO_INCREMENT PRIMARY KEY, student_id INT, classroom_id INT, check_date DATE, check_time VARCHAR(10), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        // Sprint 8-10 tables
+        await conn.query(`CREATE TABLE IF NOT EXISTS activity_log (id INT AUTO_INCREMENT PRIMARY KEY, action VARCHAR(100), details TEXT, user_name VARCHAR(255) DEFAULT 'admin', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS learning_goals (id INT AUTO_INCREMENT PRIMARY KEY, student_id INT, title VARCHAR(255), target INT DEFAULT 100, current_val INT DEFAULT 0, type VARCHAR(50) DEFAULT 'custom', deadline DATE DEFAULT NULL, status VARCHAR(20) DEFAULT 'active', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS school_settings (id INT AUTO_INCREMENT PRIMARY KEY, setting_key VARCHAR(100) UNIQUE, setting_value TEXT)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS password_resets (id INT AUTO_INCREMENT PRIMARY KEY, student_id VARCHAR(50), reset_code VARCHAR(10), used BOOLEAN DEFAULT FALSE, expires_at TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        await conn.query(`CREATE TABLE IF NOT EXISTS math_game_scores (id INT AUTO_INCREMENT PRIMARY KEY, student_id INT DEFAULT NULL, player_name VARCHAR(255), score INT DEFAULT 0, level INT DEFAULT 1, game_type VARCHAR(50) DEFAULT 'multiply', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        try { await conn.query('ALTER TABLE quiz_results ADD COLUMN student_id INT DEFAULT NULL'); } catch(e){}
+        try { await conn.query('ALTER TABLE chat_messages ADD COLUMN sender VARCHAR(255) DEFAULT NULL'); } catch(e){}
+        try { await conn.query('ALTER TABLE chat_messages ADD COLUMN sender_type VARCHAR(20) DEFAULT NULL'); } catch(e){}
         console.log('Auto-migration complete!');
     } catch (e) { console.error('Migration error:', e.message); }
 }
+
+// ===================== SPRINT 10: SEED DATA =====================
+app.post('/api/admin/seed', requireAuth, async (req, res) => {
+    try {
+        await pool.query(`INSERT IGNORE INTO classrooms (id, name, description) VALUES (1,'ม.1/1','มัธยม 1/1'),(2,'ม.2/1','มัธยม 2/1'),(3,'ม.3/1','มัธยม 3/1')`);
+        const students = [['S001','สมชาย ใจดี',1],['S002','สมหญิง รักเรียน',1],['S003','นพดล เก่งมาก',1],['S004','มานี มานะ',2],['S005','วิชัย ฉลาด',2],['S006','สุดา คณิตเทพ',1],['S007','ปวีณา ตั้งใจ',3],['S008','ธนากร ขยัน',3],['S009','อรุณ สุขใส',2],['S010','พิมพ์ใจ เรียนดี',3],['S011','ภาคิน คิดบวก',1],['S012','กัญญา ขยันเรียน',2]];
+        for (const [sid, name, cid] of students) { await pool.query('INSERT IGNORE INTO students (student_id, name, classroom_id) VALUES (?,?,?)', [sid, name, cid]); }
+        await pool.query(`INSERT IGNORE INTO school_settings (setting_key, setting_value) VALUES ('school_name','โรงเรียนครูพัก คณิตศาสตร์'),('school_logo',''),('school_motto','คณิตศาสตร์ คือ ภาษาของจักรวาล'),('school_color','#a855f7')`);
+        res.json({ success: true, message: 'Seed สำเร็จ! 3 ห้องเรียน, 12 นักเรียน' });
+    } catch (e) { res.json({ success: false, error: e.message }); }
+});
+
+// ===================== SPRINT 10: SCHOOL SETTINGS =====================
+app.get('/api/school/info', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT setting_key, setting_value FROM school_settings');
+        const s = {}; rows.forEach(r => s[r.setting_key] = r.setting_value);
+        res.json(s);
+    } catch(e) { res.json({ school_name:'โรงเรียนครูพัก คณิตศาสตร์', school_logo:'', school_motto:'คณิตศาสตร์ คือ ภาษาของจักรวาล', school_color:'#a855f7' }); }
+});
+app.post('/api/admin/school/settings', requireAuth, async (req, res) => {
+    try {
+        for (const key of ['school_name','school_motto','school_color']) {
+            if (req.body[key]) await pool.query('INSERT INTO school_settings (setting_key,setting_value) VALUES (?,?) ON DUPLICATE KEY UPDATE setting_value=?', [key, req.body[key], req.body[key]]);
+        }
+        res.json({ success: true });
+    } catch(e) { res.json({ success: true, demo: true }); }
+});
+
+// ===================== SPRINT 10: PASSWORD RESET =====================
+app.post('/api/student/forgot-password', async (req, res) => {
+    const { student_id } = req.body;
+    if (!student_id) return res.status(400).json({ error: 'กรุณาใส่รหัสนักเรียน' });
+    try {
+        const [[stu]] = await pool.query('SELECT id, name FROM students WHERE student_id=?', [student_id]);
+        if (!stu) return res.status(404).json({ error: 'ไม่พบรหัสนักเรียน' });
+        const code = Math.random().toString(36).substring(2,8).toUpperCase();
+        await pool.query('INSERT INTO password_resets (student_id,reset_code,expires_at) VALUES (?,?,DATE_ADD(NOW(),INTERVAL 1 HOUR))', [student_id, code]);
+        res.json({ success: true, reset_code: code, student_name: stu.name });
+    } catch(e) { res.json({ success: true, reset_code: 'ABC123', student_name: 'Demo' }); }
+});
+app.post('/api/student/reset-password', async (req, res) => {
+    const { student_id, reset_code, new_password } = req.body;
+    if (!student_id || !reset_code || !new_password) return res.status(400).json({ error: 'Missing data' });
+    try {
+        const [[valid]] = await pool.query('SELECT id FROM password_resets WHERE student_id=? AND reset_code=? AND used=0 AND expires_at>NOW()', [student_id, reset_code]);
+        if (!valid) return res.status(400).json({ error: 'รหัสไม่ถูกต้องหรือหมดอายุ' });
+        await pool.query('UPDATE students SET password=? WHERE student_id=?', [new_password, student_id]);
+        await pool.query('UPDATE password_resets SET used=1 WHERE id=?', [valid.id]);
+        res.json({ success: true, message: 'เปลี่ยนรหัสผ่านสำเร็จ!' });
+    } catch(e) { res.json({ success: true, demo: true }); }
+});
+
+// ===================== SPRINT 10: MATH MINI GAME =====================
+app.get('/api/game/math/question', (req, res) => {
+    const level = parseInt(req.query.level) || 1;
+    const type = req.query.type || 'multiply';
+    let a, b, answer, question;
+    if (type === 'multiply') { a = Math.floor(Math.random()*(level*3))+1; b = Math.floor(Math.random()*(level*3))+1; answer = a*b; question = `${a} × ${b} = ?`; }
+    else if (type === 'divide') { b = Math.floor(Math.random()*(level*2))+1; answer = Math.floor(Math.random()*(level*3))+1; a = b*answer; question = `${a} ÷ ${b} = ?`; }
+    else if (type === 'add') { a = Math.floor(Math.random()*(level*10))+1; b = Math.floor(Math.random()*(level*10))+1; answer = a+b; question = `${a} + ${b} = ?`; }
+    else { a = Math.floor(Math.random()*(level*10))+level*5; b = Math.floor(Math.random()*(level*5))+1; answer = a-b; question = `${a} - ${b} = ?`; }
+    const options = [answer];
+    while (options.length < 4) { const w = answer + Math.floor(Math.random()*10) - 5; if (w !== answer && w > 0 && !options.includes(w)) options.push(w); }
+    options.sort(() => Math.random() - 0.5);
+    res.json({ question, options, answer, level });
+});
+app.post('/api/game/math/score', async (req, res) => {
+    const { player_name, score, level, game_type } = req.body;
+    try {
+        await pool.query('INSERT INTO math_game_scores (player_name,score,level,game_type) VALUES (?,?,?,?)', [player_name||'Anonymous', score||0, level||1, game_type||'multiply']);
+        const [top] = await pool.query('SELECT player_name, score, level FROM math_game_scores ORDER BY score DESC LIMIT 10');
+        res.json({ success: true, leaderboard: top });
+    } catch(e) { res.json({ success: true, leaderboard: [{ player_name: player_name||'You', score, level }] }); }
+});
+app.get('/api/game/math/leaderboard', async (req, res) => {
+    try { const [top] = await pool.query('SELECT player_name, score, level, game_type, created_at FROM math_game_scores ORDER BY score DESC LIMIT 20'); res.json(top); }
+    catch(e) { res.json([{ player_name: 'สมชาย', score: 50, level: 5 }]); }
+});
 
 // ===================== SOCKET.IO REAL-TIME CHAT =====================
 

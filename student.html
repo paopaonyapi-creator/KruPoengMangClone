@@ -88,6 +88,18 @@
                     <p id="login-error" style="color:#ef4444;display:none;margin-bottom:12px;"></p>
                     <button type="submit" class="btn-glow btn-full"><i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ</button>
                 </form>
+                <p style="margin-top:12px;"><a href="#" onclick="document.getElementById('forgot-section').style.display=document.getElementById('forgot-section').style.display==='none'?'block':'none';return false;" style="color:#f59e0b;font-size:0.85rem;">🔑 ลืมรหัสผ่าน?</a></p>
+                <div id="forgot-section" style="display:none;margin-top:12px;padding:12px;border:1px solid var(--glass-border);border-radius:12px;text-align:left;">
+                    <h4 style="margin-bottom:8px;">🔑 รีเซ็ตรหัสผ่าน</h4>
+                    <div class="form-group"><input class="glass-input" id="forgot-id" placeholder="รหัสนักเรียน"></div>
+                    <button class="btn-outline btn-full" onclick="requestReset()" style="margin-bottom:8px;">➡️ ขอรหัสรีเซ็ต</button>
+                    <div id="reset-code-section" style="display:none;">
+                        <div class="form-group"><input class="glass-input" id="reset-code" placeholder="รหัสรีเซ็ต"></div>
+                        <div class="form-group"><input type="password" class="glass-input" id="new-pass" placeholder="รหัสผ่านใหม่"></div>
+                        <button class="btn-glow btn-full" onclick="resetPassword()">✅ เปลี่ยนรหัสผ่าน</button>
+                    </div>
+                    <p id="forgot-result" style="font-size:0.85rem;margin-top:8px;"></p>
+                </div>
                 <p style="margin-top:16px;"><a href="index.html" style="color:var(--text-muted);">&larr; กลับหน้าหลัก</a></p>
             </div>
         </div>
@@ -327,6 +339,33 @@
     }
 
     function studentLogout() { localStorage.removeItem('studentToken'); localStorage.removeItem('studentData'); location.reload(); }
+
+    // Forgot Password
+    async function requestReset() {
+        const sid = document.getElementById('forgot-id').value.trim();
+        const out = document.getElementById('forgot-result');
+        if (!sid) { out.innerHTML = '<span style="color:#ef4444;">กรุณาใส่รหัสนักเรียน</span>'; return; }
+        try {
+            const res = await fetch('/api/student/forgot-password', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ student_id: sid }) });
+            const data = await res.json();
+            if (data.success) {
+                out.innerHTML = `<span style="color:#10b981;">✅ รหัสรีเซ็ต: <strong>${data.reset_code}</strong> (${data.student_name})</span>`;
+                document.getElementById('reset-code-section').style.display = 'block';
+            } else { out.innerHTML = `<span style="color:#ef4444;">${data.error||'ไม่สำเร็จ'}</span>`; }
+        } catch(e) { out.innerHTML = '<span style="color:#ef4444;">เชื่อมต่อไม่ได้</span>'; }
+    }
+    async function resetPassword() {
+        const sid = document.getElementById('forgot-id').value.trim();
+        const code = document.getElementById('reset-code').value.trim();
+        const pass = document.getElementById('new-pass').value.trim();
+        const out = document.getElementById('forgot-result');
+        if (!sid || !code || !pass) { out.innerHTML = '<span style="color:#ef4444;">กรอกข้อมูลให้ครบ</span>'; return; }
+        try {
+            const res = await fetch('/api/student/reset-password', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ student_id: sid, reset_code: code, new_password: pass }) });
+            const data = await res.json();
+            out.innerHTML = data.success ? '<span style="color:#10b981;">✅ เปลี่ยนรหัสผ่านสำเร็จ! กรุณาเข้าสู่ระบบใหม่</span>' : `<span style="color:#ef4444;">${data.error||'ไม่สำเร็จ'}</span>`;
+        } catch(e) { out.innerHTML = '<span style="color:#ef4444;">เชื่อมต่อไม่ได้</span>'; }
+    }
 
     function showPortal() {
         document.getElementById('login-screen').style.display = 'none';

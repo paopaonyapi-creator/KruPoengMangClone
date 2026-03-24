@@ -1,4 +1,4 @@
-const CACHE_NAME = 'krupug-v17';
+const CACHE_NAME = 'krupug-v18';
 const STATIC_ASSETS = [
     '/',
     '/index.html',
@@ -6,6 +6,7 @@ const STATIC_ASSETS = [
     '/app.js',
     '/i18n.js',
     '/student.html',
+    '/game.html',
     '/admin.html',
     '/admin.js',
     '/calendar.html',

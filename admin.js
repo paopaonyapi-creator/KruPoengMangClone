@@ -1389,3 +1389,41 @@ async function deleteFile(name) {
         alert('✅ ลบสำเร็จ'); loadFiles();
     } catch(e) { alert('❌ ' + e.message); }
 }
+
+// ===================== SPRINT 10: SEED DATA =====================
+async function seedData() {
+    if (!confirm('ใส่ข้อมูลตัวอย่าง (3 ห้องเรียน, 12 นักเรียน)?')) return;
+    try {
+        const res = await fetch('/api/admin/seed', { method:'POST', headers:{ 'Content-Type':'application/json', 'x-admin-token': TOKEN } });
+        const data = await res.json();
+        alert(data.success ? '✅ ' + data.message : '❌ ' + (data.error || 'Error'));
+        loadDashboard();
+    } catch(e) { alert('❌ ' + e.message); }
+}
+
+// ===================== SPRINT 10: SCHOOL SETTINGS =====================
+async function loadSchoolSettings() {
+    try {
+        const res = await fetch('/api/school/info');
+        const s = await res.json();
+        const el = document.getElementById('school-settings-form');
+        if (!el) return;
+        document.getElementById('school-name-input').value = s.school_name || '';
+        document.getElementById('school-motto-input').value = s.school_motto || '';
+        document.getElementById('school-color-input').value = s.school_color || '#a855f7';
+    } catch(e) {}
+}
+
+async function saveSchoolSettings() {
+    const school_name = document.getElementById('school-name-input').value;
+    const school_motto = document.getElementById('school-motto-input').value;
+    const school_color = document.getElementById('school-color-input').value;
+    try {
+        const res = await fetch('/api/admin/school/settings', {
+            method:'POST', headers:{'Content-Type':'application/json','x-admin-token': TOKEN},
+            body: JSON.stringify({ school_name, school_motto, school_color })
+        });
+        const data = await res.json();
+        alert(data.success ? '✅ บันทึกข้อมูลโรงเรียนสำเร็จ' : '❌ Error');
+    } catch(e) { alert('❌ ' + e.message); }
+}

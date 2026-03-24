@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Math Arena — ครูพัก</title>
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .game-container { max-width: 600px; margin: 20px auto; padding: 0 16px; text-align: center; }
+        .game-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .game-score { font-size: 2.5rem; font-weight: 800; background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .game-level { font-size: 1rem; color: var(--text-muted); }
+        .question-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 20px; padding: 40px 20px; margin-bottom: 20px; }
+        .question-text { font-size: 2.2rem; font-weight: 700; margin-bottom: 8px; }
+        .question-sub { color: var(--text-muted); font-size: 0.9rem; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .option-btn { background: var(--glass-bg); border: 2px solid var(--glass-border); border-radius: 16px; padding: 20px; font-size: 1.4rem; font-weight: 700; cursor: pointer; transition: all 0.3s; color: #fff; }
+        .option-btn:hover { border-color: var(--primary); transform: scale(1.05); }
+        .option-btn.correct { background: rgba(16,185,129,0.3); border-color: #10b981; animation: pulse 0.4s; }
+        .option-btn.wrong { background: rgba(239,68,68,0.3); border-color: #ef4444; animation: shake 0.4s; }
+        .timer-bar { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 16px; }
+        .timer-fill { height: 100%; background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); border-radius: 3px; transition: width 0.1s linear; }
+        .combo-text { font-size: 1.2rem; font-weight: 700; color: #fbbf24; opacity: 0; transition: all 0.3s; }
+        .combo-text.show { opacity: 1; transform: scale(1.2); }
+        .type-selector { display: flex; gap: 8px; justify-content: center; margin-bottom: 16px; flex-wrap: wrap; }
+        .type-btn { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 10px; padding: 8px 14px; cursor: pointer; font-size: 0.85rem; color: #fff; transition: all 0.3s; }
+        .type-btn.active { background: var(--primary); border-color: var(--primary); }
+        .lb-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; margin-bottom: 8px; }
+        .lb-rank { font-size: 1.3rem; font-weight: 800; min-width: 30px; text-align: center; }
+        .lb-row:nth-child(1) .lb-rank { color: #fbbf24; }
+        .lb-row:nth-child(2) .lb-rank { color: #94a3b8; }
+        .lb-row:nth-child(3) .lb-rank { color: #cd7f32; }
+        .game-over { display: none; }
+        .game-over.active { display: block; }
+        @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+        .streak-fire { font-size: 1.5rem; animation: bounce 0.5s; }
+        @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    </style>
+</head>
+<body>
+    <div class="dynamic-bg"><div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div></div>
+    <div class="game-container">
+        <a href="index.html" style="color:var(--text-muted);font-size:0.85rem;text-decoration:none;display:block;text-align:left;margin-bottom:8px;">← กลับหน้าหลัก</a>
+        <h1 style="margin-bottom:4px;">🎮 Math Arena</h1>
+        <p style="color:var(--text-muted);margin-bottom:16px;">ฝึกคณิต ท้าสมอง เก็บคะแนน!</p>
+
+        <!-- Type Selector -->
+        <div class="type-selector">
+            <button class="type-btn active" onclick="setType('multiply',this)">✖️ คูณ</button>
+            <button class="type-btn" onclick="setType('divide',this)">➗ หาร</button>
+            <button class="type-btn" onclick="setType('add',this)">➕ บวก</button>
+            <button class="type-btn" onclick="setType('subtract',this)">➖ ลบ</button>
+        </div>
+
+        <!-- Game Area -->
+        <div id="game-active">
+            <div class="game-header">
+                <div><span class="game-score" id="score-display">0</span><br><span class="game-level" id="level-display">Level 1</span></div>
+                <div><span id="combo-text" class="combo-text"></span><br><span style="color:var(--text-muted);font-size:0.8rem;" id="streak-display">Streak: 0</span></div>
+                <div><span style="font-size:2rem;" id="lives-display">❤️❤️❤️</span><br><span style="color:var(--text-muted);font-size:0.8rem;">Lives</span></div>
+            </div>
+            <div class="timer-bar"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div>
+            <div class="question-card">
+                <p class="question-text" id="question-text">กด Start เพื่อเริ่ม!</p>
+                <p class="question-sub" id="question-sub">เลือกประเภทโจทย์ แล้วกด Start</p>
+            </div>
+            <div class="options-grid" id="options-grid"></div>
+            <button class="btn-glow btn-full" id="start-btn" onclick="startGame()"><i class="fa-solid fa-play"></i> Start Game</button>
+        </div>
+
+        <!-- Game Over -->
+        <div id="game-over" class="game-over">
+            <div class="question-card">
+                <p style="font-size:3rem;margin-bottom:8px;">🏆</p>
+                <p class="question-text" id="final-score">0</p>
+                <p class="question-sub">คะแนนสุดท้าย</p>
+                <p style="margin-top:8px;color:var(--text-muted);" id="final-stats"></p>
+            </div>
+            <button class="btn-glow btn-full" onclick="startGame()" style="margin-bottom:12px;"><i class="fa-solid fa-rotate-right"></i> เล่นอีกครั้ง</button>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="glass-card" style="margin-top:20px;padding:16px;">
+            <h3 style="margin-bottom:12px;">🏅 Leaderboard</h3>
+            <div id="leaderboard">กำลังโหลด...</div>
+        </div>
+    </div>
+
+    <script>
+    let gameType = 'multiply', score = 0, level = 1, lives = 3, streak = 0, maxStreak = 0, timer = null, timeLeft = 10, currentAnswer = 0, playing = false;
+
+    function setType(t, btn) {
+        gameType = t;
+        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    async function startGame() {
+        score = 0; level = 1; lives = 3; streak = 0; maxStreak = 0; playing = true;
+        document.getElementById('game-over').classList.remove('active');
+        document.getElementById('game-active').style.display = 'block';
+        document.getElementById('start-btn').style.display = 'none';
+        updateUI();
+        nextQuestion();
+    }
+
+    async function nextQuestion() {
+        if (!playing) return;
+        try {
+            const res = await fetch(`/api/game/math/question?level=${level}&type=${gameType}`);
+            const data = await res.json();
+            document.getElementById('question-text').textContent = data.question;
+            document.getElementById('question-sub').textContent = `Level ${level}`;
+            currentAnswer = data.answer;
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = data.options.map(o => `<button class="option-btn" onclick="checkAnswer(${o},this)">${o}</button>`).join('');
+            startTimer();
+        } catch(e) {
+            const a = Math.floor(Math.random()*12)+1, b = Math.floor(Math.random()*12)+1;
+            currentAnswer = a * b;
+            document.getElementById('question-text').textContent = `${a} × ${b} = ?`;
+            const opts = [currentAnswer]; while(opts.length<4){const w=currentAnswer+Math.floor(Math.random()*10)-5;if(w!==currentAnswer&&w>0&&!opts.includes(w))opts.push(w);}
+            opts.sort(()=>Math.random()-0.5);
+            document.getElementById('options-grid').innerHTML = opts.map(o => `<button class="option-btn" onclick="checkAnswer(${o},this)">${o}</button>`).join('');
+            startTimer();
+        }
+    }
+
+    function startTimer() {
+        timeLeft = Math.max(3, 10 - level * 0.5);
+        const maxTime = timeLeft;
+        clearInterval(timer);
+        timer = setInterval(() => {
+            timeLeft -= 0.1;
+            document.getElementById('timer-fill').style.width = (timeLeft / maxTime * 100) + '%';
+            if (timeLeft <= 0) { clearInterval(timer); loseLife(); }
+        }, 100);
+    }
+
+    function checkAnswer(answer, btn) {
+        if (!playing) return;
+        clearInterval(timer);
+        const allBtns = document.querySelectorAll('.option-btn');
+        allBtns.forEach(b => b.style.pointerEvents = 'none');
+        if (answer === currentAnswer) {
+            btn.classList.add('correct');
+            streak++;
+            if (streak > maxStreak) maxStreak = streak;
+            const bonus = streak >= 5 ? 3 : streak >= 3 ? 2 : 1;
+            score += level * bonus * 10;
+            if (score >= level * 100) level++;
+            showCombo();
+        } else {
+            btn.classList.add('wrong');
+            streak = 0;
+            loseLife();
+            return;
+        }
+        updateUI();
+        setTimeout(() => nextQuestion(), 600);
+    }
+
+    function loseLife() {
+        lives--;
+        updateUI();
+        if (lives <= 0) { endGame(); return; }
+        setTimeout(() => nextQuestion(), 800);
+    }
+
+    function showCombo() {
+        const el = document.getElementById('combo-text');
+        if (streak >= 10) el.textContent = '🔥🔥🔥 LEGENDARY!';
+        else if (streak >= 7) el.textContent = '🔥🔥 ON FIRE!';
+        else if (streak >= 5) el.textContent = '🔥 COMBO x' + streak;
+        else if (streak >= 3) el.textContent = '⚡ NICE x' + streak;
+        else el.textContent = '✅';
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 1500);
+    }
+
+    function updateUI() {
+        document.getElementById('score-display').textContent = score;
+        document.getElementById('level-display').textContent = 'Level ' + level;
+        document.getElementById('streak-display').textContent = 'Streak: ' + streak;
+        document.getElementById('lives-display').textContent = '❤️'.repeat(lives) + '🖤'.repeat(Math.max(0, 3-lives));
+    }
+
+    async function endGame() {
+        playing = false;
+        clearInterval(timer);
+        document.getElementById('game-active').style.display = 'none';
+        document.getElementById('game-over').classList.add('active');
+        document.getElementById('final-score').textContent = score + ' คะแนน';
+        document.getElementById('final-stats').textContent = `Level ${level} | Max Streak: ${maxStreak}`;
+        document.getElementById('start-btn').style.display = 'block';
+        // Save score
+        const name = prompt('ใส่ชื่อของคุณ:', 'นักเรียน') || 'Anonymous';
+        try {
+            await fetch('/api/game/math/score', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ player_name: name, score, level, game_type: gameType }) });
+        } catch(e) {}
+        loadLeaderboard();
+    }
+
+    async function loadLeaderboard() {
+        try {
+            const res = await fetch('/api/game/math/leaderboard');
+            const data = await res.json();
+            document.getElementById('leaderboard').innerHTML = data.map((r, i) =>
+                `<div class="lb-row"><span class="lb-rank">${i+1}</span><span style="flex:1;">${r.player_name}</span><span style="font-weight:700;color:#fbbf24;">${r.score}</span><span style="color:var(--text-muted);font-size:0.8rem;margin-left:8px;">Lv${r.level}</span></div>`
+            ).join('') || '<p style="color:var(--text-muted);">ยังไม่มีคะแนน — เล่นเลย!</p>';
+        } catch(e) { document.getElementById('leaderboard').innerHTML = '<p style="color:var(--text-muted);">ยังไม่มีคะแนน</p>'; }
+    }
+    loadLeaderboard();
+    </script>
+</body>
+</html>
