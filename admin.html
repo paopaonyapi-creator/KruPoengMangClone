@@ -702,6 +702,14 @@
                 <button class="btn-glow btn-full" style="background:#14b8a6;margin-top:8px;" onclick="saveSchoolSettings()"><i class="fa-solid fa-save"></i> บันทึกข้อมูลโรงเรียน</button>
                 <button class="btn-outline btn-full" style="margin-top:8px;" onclick="loadSchoolSettings()"><i class="fa-solid fa-rotate"></i> โหลดข้อมูลปัจจุบัน</button>
             </div>
+
+            <!-- Excel Export -->
+            <div class="glass-card" style="margin-top:24px;max-width:500px;">
+                <h3><i class="fa-solid fa-file-excel" style="color:#10b981;"></i> Export Excel</h3>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:12px;">ดาวน์โหลดข้อมูลเป็น Excel (.xlsx)</p>
+                <button class="btn-glow btn-full" style="background:#10b981;margin-bottom:8px;" onclick="exportStudentsExcel()"><i class="fa-solid fa-users"></i> Export รายชื่อนักเรียน</button>
+                <button class="btn-glow btn-full" style="background:#3b82f6;" onclick="exportQuizResultsExcel()"><i class="fa-solid fa-chart-bar"></i> Export ผลสอบ</button>
+            </div>
         </div>
     </div>
 

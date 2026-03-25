@@ -1514,3 +1514,30 @@ async function seedQuizzes() {
     } catch(e) { alert('❌ ' + e.message); }
 }
 
+// ===================== SPRINT 12: EXCEL EXPORT =====================
+async function exportStudentsExcel() {
+    try {
+        const res = await fetch('/api/admin/export/students', { headers: { 'x-admin-token': TOKEN } });
+        const data = await res.json();
+        if (!data.data?.length) { alert('ไม่มีข้อมูล'); return; }
+        const ws = XLSX.utils.json_to_sheet(data.data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Students');
+        XLSX.writeFile(wb, 'students_export.xlsx');
+        alert('✅ ดาวน์โหลด students_export.xlsx สำเร็จ!');
+    } catch(e) { alert('❌ ' + e.message); }
+}
+
+async function exportQuizResultsExcel() {
+    try {
+        const res = await fetch('/api/admin/export/quiz-results', { headers: { 'x-admin-token': TOKEN } });
+        const data = await res.json();
+        if (!data.data?.length) { alert('ไม่มีข้อมูล'); return; }
+        const ws = XLSX.utils.json_to_sheet(data.data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Quiz Results');
+        XLSX.writeFile(wb, 'quiz_results_export.xlsx');
+        alert('✅ ดาวน์โหลด quiz_results_export.xlsx สำเร็จ!');
+    } catch(e) { alert('❌ ' + e.message); }
+}
+

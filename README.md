@@ -1,47 +1,44 @@
-# 🎓 Kru Pug Hub — ศูนย์รวมสื่อคณิตศาสตร์
+# 🧮 Kru Pug — ศูนย์รวมสื่อคณิตศาสตร์
 
-[![Deploy on Railway](https://img.shields.io/badge/Deploy-Railway-blueviolet)](https://railway.app)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-green)](https://nodejs.org)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+> ระบบ Education Platform ครบวงจร สำหรับครู นักเรียน และผู้ปกครอง
 
-> ระบบบริหารจัดการห้องเรียนคณิตศาสตร์ครบวงจร สำหรับ **ครูพัก** — ออกแบบมาเพื่อครูไทยโดยเฉพาะ
-
-## ✨ ฟีเจอร์หลัก
+## 🚀 ฟีเจอร์หลัก
 
 | ฟีเจอร์ | รายละเอียด |
 |---------|-----------|
-| 📝 **แบบทดสอบออนไลน์** | สร้างข้อสอบ 4 ตัวเลือก + ตั้งเวลา + ตรวจอัตโนมัติ |
-| 🎓 **พอร์ทัลนักเรียน** | Dashboard, EXP, Level, Badges, Analytics |
-| 👨‍👩‍👧 **พอร์ทัลผู้ปกครอง** | ดูผลการเรียน + ประวัติเช็คชื่อ + เหรียญรางวัล |
-| 📱 **QR Code เช็คชื่อ** | ครูสร้าง QR → นักเรียนสแกนเช็คชื่อ |
-| 🤖 **AI Tutor** | ถามคณิตศาสตร์ได้ตลอด (OpenRouter API) |
-| 💬 **Real-time Chat** | ห้องแชทพร้อม Emoji Picker + Socket.IO |
-| 📊 **Admin Dashboard** | สถิติ, กราฟ, จัดการข้อมูล, Export CSV |
-| 📅 **ปฏิทินกิจกรรม** | ตารางสอน + กิจกรรมรายสัปดาห์ |
-| 🔔 **แจ้งเตือน** | Telegram + LINE Messaging API |
-| 🌙 **Dark/Light Mode** | สลับธีมได้ |
-| 🌐 **สองภาษา** | ไทย / English |
-| 📱 **PWA** | ติดตั้งเป็น App บนมือถือ |
+| 🎓 **พอร์ทัลนักเรียน** | Dashboard, AI Chat, แบบทดสอบ, ความก้าวหน้า |
+| 📝 **แบบทดสอบ** | สร้างข้อสอบ, AI QuizGen, ส่งคะแนนผ่าน LINE |
+| 🎮 **Math Arena** | เกมคณิตศาสตร์ 4 ประเภท (บวก ลบ คูณ หาร) |
+| 📊 **Admin Dashboard** | Chart.js กราฟ, จัดการนักเรียน/ครู/ห้องเรียน |
+| 📅 **ตารางสอน** | Calendar รายสัปดาห์ + Google Meet ลิงก์ |
+| ✅ **เช็คชื่อ** | QR Code + เช็คชื่อออนไลน์ |
+| 👨‍👩‍👧 **ผู้ปกครอง** | ดูคะแนน/เข้าเรียนลูก |
+| 💬 **แชท** | Socket.io real-time chat |
+| 📄 **ใบรายงานผล** | PDF Report Card |
+| 🏆 **Badge System** | เหรียญรางวัลอัตโนมัติ |
+| 📋 **Excel Export** | ดาวน์โหลดข้อมูลเป็น .xlsx |
 
-## 🚀 Getting Started
+## 🛠️ เทคโนโลยี
 
-### Prerequisites
-- Node.js 18+
-- MySQL (optional — มี Demo mode fallback)
+- **Backend:** Node.js, Express, Socket.io
+- **Database:** MySQL (Railway)
+- **Frontend:** HTML5, CSS3, JavaScript, Chart.js
+- **Security:** bcrypt, helmet, rate-limit, XSS protection
+- **PWA:** Service Worker, manifest.json
 
-### Installation
+## ⚙️ Installation
 
 ```bash
 # Clone
 git clone https://github.com/paopaonyapi-creator/KruPoengMangClone.git
 cd KruPoengMangClone
 
-# Install dependencies
+# Install
 npm install
 
-# Setup environment
+# ตั้งค่า Environment Variables
 cp .env.example .env
-# แก้ไข .env ตามต้องการ
+# แก้ไข .env ใส่ค่าที่ต้องการ
 
 # Run
 npm start
@@ -49,63 +46,97 @@ npm start
 node server.js
 ```
 
-### Environment Variables (.env)
+## 🔐 Environment Variables
 
-```env
-PORT=3000
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=
-DB_NAME=krupug
-ADMIN_USER=admin
-ADMIN_PASS=pugadmin2024
-OPENROUTER_API_KEY=your_key_here
-TELEGRAM_BOT_TOKEN=your_bot_token
-TELEGRAM_CHAT_ID=your_chat_id
-LINE_CHANNEL_ACCESS_TOKEN=your_channel_access_token
-```
+| ตัวแปร | คำอธิบาย | ค่าเริ่มต้น |
+|--------|---------|-----------|
+| `DB_HOST` | MySQL Host | localhost |
+| `DB_USER` | MySQL User | root |
+| `DB_PASS` | MySQL Password | - |
+| `DB_NAME` | MySQL Database | krupug_db |
+| `ADMIN_PASSWORD` | Admin Login | admin1234 |
+| `JWT_SECRET` | JWT Secret Key | auto-generate |
+| `OPENROUTER_API_KEY` | OpenRouter AI API | - |
+| `TELEGRAM_BOT_TOKEN` | Telegram Bot Token | - |
+| `TELEGRAM_CHAT_ID` | Telegram Chat ID | - |
+| `LINE_CHANNEL_ACCESS_TOKEN` | LINE Messaging API | - |
 
-> 💡 **ไม่มี MySQL?** ไม่ต้องห่วง! ระบบจะใช้ Demo Data อัตโนมัติ
-
-## 📁 Project Structure
+## 📁 โครงสร้างไฟล์
 
 ```
 KruPoengMangClone/
-├── server.js          # Express + Socket.IO server
-├── index.html         # หน้าหลัก
-├── admin.html         # Admin Dashboard
-├── student.html       # พอร์ทัลนักเรียน
-├── parent.html        # พอร์ทัลผู้ปกครอง
-├── quiz.html          # ระบบแบบทดสอบ
-├── calendar.html      # ปฏิทินกิจกรรม
-├── checkin.html       # หน้าเช็คชื่อ QR Code
-├── index.css          # Global styles
-├── i18n.js            # Internationalization
+├── server.js          # Backend API (Express + Socket.io)
+├── index.html         # Landing page
+├── index.css          # Global styles (glassmorphism)
+├── app.js             # Frontend JS (landing page)
+├── student.html       # Student portal
+├── admin.html         # Admin panel
+├── admin.js           # Admin JS
+├── quiz.html          # Quiz system
+├── game.html          # Math Arena game
+├── calendar.html      # Teaching schedule
+├── attendance.html    # Attendance check
+├── checkin.html       # QR Check-in
+├── teacher.html       # Teacher portal
+├── parent.html        # Parent portal
 ├── sw.js              # Service Worker (PWA)
 ├── manifest.json      # PWA manifest
-└── .env               # Environment variables
+├── i18n.js            # ภาษา TH/EN
+└── uploads/           # File uploads
 ```
 
-## 🔐 Demo Credentials
+## 🔒 Security Features
 
-| Portal | ID | Password/Code |
-|--------|-----|---------|
-| 🔐 Admin | `admin` | `pugadmin2024` |
-| 🎓 นักเรียน | ID อะไรก็ได้ | `1234` |
-| 👨‍👩‍👧 ผู้ปกครอง | ID อะไรก็ได้ | `PARENT01` |
+- ✅ **bcrypt** password hashing
+- ✅ **helmet** HTTP headers
+- ✅ **rate-limit** 10 attempts / 15 min
+- ✅ **XSS** sanitization
+- ✅ **JWT** admin authentication
+- ✅ **CORS** enabled
 
-## 🛠️ Tech Stack
+## 📊 API Endpoints
 
-- **Backend**: Node.js, Express, Socket.IO
-- **Database**: MySQL (optional)
-- **Frontend**: Vanilla JS, CSS3 (Glassmorphism)
-- **AI**: OpenRouter API
-- **Notifications**: Telegram Bot, LINE Messaging API
-- **Charts**: Chart.js
-- **PDF**: jsPDF
-- **QR Code**: qrcode
-- **Security**: Helmet, bcryptjs, XSS sanitize, Rate limiting
+### Public
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/content/:type` | ดึงเนื้อหา |
+| POST | `/api/student/login` | Student login |
+| POST | `/api/parent/login` | Parent login |
+| GET | `/api/school/info` | School info |
 
-## 📄 License
+### Student (Auth)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/student/dashboard` | Dashboard stats |
+| POST | `/api/student/forgot-password` | Request reset |
+| POST | `/api/student/reset-password` | Reset password |
+| GET | `/api/student/report-pdf/:id` | PDF Report Card |
+| GET | `/api/student/badges/:id` | View badges |
 
-MIT License — Made with ❤️ by Kru Pug
+### Admin (Auth)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/login` | Admin login |
+| GET | `/api/admin/analytics/quiz-scores` | Quiz charts |
+| GET | `/api/admin/export/students` | Export students |
+| GET | `/api/admin/export/quiz-results` | Export results |
+| POST | `/api/admin/seed` | Seed demo data |
+| POST | `/api/admin/seed-quizzes` | Seed quizzes |
+
+### Game
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/game/math/question` | Get math question |
+| POST | `/api/game/math/score` | Submit score |
+| GET | `/api/game/math/leaderboard` | Leaderboard |
+
+## 🚀 Deploy
+
+ระบบ deploy บน **Railway** ด้วยคำสั่ง:
+```bash
+railway up
+```
+
+## 📝 License
+
+MIT License — ครูพัก (Pug) คณิตศาสตร์
