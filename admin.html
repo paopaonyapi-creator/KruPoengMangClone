@@ -83,6 +83,21 @@
                 <div class="dash-card glass-card"><p class="dash-num" id="d-classrooms" style="color:#8b5cf6;">-</p><p class="dash-label">ห้องเรียน</p></div>
                 <div class="dash-card glass-card"><p class="dash-num" id="d-students" style="color:#10b981;">-</p><p class="dash-label">นักเรียน</p></div>
             </div>
+            <!-- Charts Grid -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;">
+                <div class="glass-card" style="padding:16px;">
+                    <h4 style="margin-bottom:8px;font-size:0.9rem;"><i class="fa-solid fa-chart-bar" style="color:#a855f7;"></i> คะแนนเฉลี่ยแบบทดสอบ</h4>
+                    <canvas id="chart-quiz-scores" height="180"></canvas>
+                </div>
+                <div class="glass-card" style="padding:16px;">
+                    <h4 style="margin-bottom:8px;font-size:0.9rem;"><i class="fa-solid fa-chart-pie" style="color:#10b981;"></i> สถิติเข้าเรียน</h4>
+                    <canvas id="chart-attendance" height="180"></canvas>
+                </div>
+            </div>
+            <div class="glass-card" style="padding:16px;margin-top:16px;">
+                <h4 style="margin-bottom:8px;font-size:0.9rem;"><i class="fa-solid fa-chart-line" style="color:#3b82f6;"></i> กิจกรรมรายสัปดาห์</h4>
+                <canvas id="chart-weekly-activity" height="100"></canvas>
+            </div>
         </div>
 
         <!-- Tabs -->
@@ -673,8 +688,9 @@
             <!-- Seed Data -->
             <div class="glass-card" style="margin-top:24px;max-width:500px;">
                 <h3><i class="fa-solid fa-database" style="color:#6366f1;"></i> ข้อมูลตัวอย่าง</h3>
-                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:12px;">เพิ่ม 3 ห้องเรียน + 12 นักเรียน สำหรับทดสอบระบบ</p>
-                <button class="btn-glow btn-full" style="background:#6366f1;" onclick="seedData()"><i class="fa-solid fa-seedling"></i> Seed Demo Data</button>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:12px;">เพิ่มข้อมูลสำหรับทดสอบระบบ</p>
+                <button class="btn-glow btn-full" style="background:#6366f1;margin-bottom:8px;" onclick="seedData()"><i class="fa-solid fa-seedling"></i> Seed นักเรียน (3 ห้อง + 12 คน)</button>
+                <button class="btn-glow btn-full" style="background:#f59e0b;" onclick="seedQuizzes()"><i class="fa-solid fa-pen-ruler"></i> Seed ข้อสอบ (5 ชุด + 25 ข้อ)</button>
             </div>
 
             <!-- School Settings -->

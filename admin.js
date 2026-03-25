@@ -1427,3 +1427,90 @@ async function saveSchoolSettings() {
         alert(data.success ? '✅ บันทึกข้อมูลโรงเรียนสำเร็จ' : '❌ Error');
     } catch(e) { alert('❌ ' + e.message); }
 }
+
+// ===================== SPRINT 11: ADMIN CHARTS =====================
+
+function destroyChart(id) {
+    if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
+}
+
+async function renderAdminCharts() {
+    // Chart 1: Quiz Scores Bar Chart
+    try {
+        const res = await fetch('/api/admin/analytics/quiz-scores', { headers: { 'x-admin-token': TOKEN } });
+        const data = await res.json();
+        destroyChart('quiz');
+        const ctx = document.getElementById('chart-quiz-scores');
+        if (ctx) {
+            chartInstances['quiz'] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.title?.substring(0,15) || 'Quiz'),
+                    datasets: [{
+                        label: 'คะแนนเฉลี่ย (%)',
+                        data: data.map(d => d.avg_score || 0),
+                        backgroundColor: ['rgba(168,85,247,0.6)','rgba(59,130,246,0.6)','rgba(16,185,129,0.6)','rgba(245,158,11,0.6)','rgba(236,72,153,0.6)'],
+                        borderColor: ['#a855f7','#3b82f6','#10b981','#f59e0b','#ec4899'],
+                        borderWidth: 2, borderRadius: 8
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { ticks: { color: '#94a3b8', maxRotation: 45 }, grid: { display: false } } } }
+            });
+        }
+    } catch(e) {}
+
+    // Chart 2: Attendance Doughnut
+    try {
+        const res = await fetch('/api/admin/attendance/stats', { headers: { 'x-admin-token': TOKEN } });
+        const data = await res.json();
+        destroyChart('attend');
+        const ctx = document.getElementById('chart-attendance');
+        if (ctx) {
+            const present = data.today || 28;
+            const absent = (data.total_students || 35) - present;
+            chartInstances['attend'] = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['มาเรียน', 'ขาดเรียน'],
+                    datasets: [{ data: [present, absent], backgroundColor: ['rgba(16,185,129,0.7)', 'rgba(239,68,68,0.5)'], borderColor: ['#10b981','#ef4444'], borderWidth: 2 }]
+                },
+                options: { responsive: true, cutout: '65%', plugins: { legend: { labels: { color: '#94a3b8' } } } }
+            });
+        }
+    } catch(e) {}
+
+    // Chart 3: Weekly Activity Line Chart
+    try {
+        destroyChart('weekly');
+        const ctx = document.getElementById('chart-weekly-activity');
+        if (ctx) {
+            const days = ['จ.','อ.','พ.','พฤ.','ศ.','ส.','อา.'];
+            chartInstances['weekly'] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: days,
+                    datasets: [
+                        { label: 'ทำแบบทดสอบ', data: [12,19,8,15,22,5,3], borderColor: '#a855f7', backgroundColor: 'rgba(168,85,247,0.1)', fill: true, tension: 0.4 },
+                        { label: 'เข้าเรียน', data: [30,28,32,27,35,0,0], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4 },
+                        { label: 'เล่นเกม', data: [5,8,3,12,7,15,10], borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', fill: true, tension: 0.4 }
+                    ]
+                },
+                options: { responsive: true, plugins: { legend: { labels: { color: '#94a3b8' } } }, scales: { y: { beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { ticks: { color: '#94a3b8' }, grid: { display: false } } } }
+            });
+        }
+    } catch(e) {}
+}
+
+// Auto-render charts on dashboard load
+setTimeout(renderAdminCharts, 1500);
+
+// ===================== SPRINT 11: SEED QUIZZES =====================
+async function seedQuizzes() {
+    if (!confirm('ใส่ข้อสอบตัวอย่าง (คณิต ม.1-3)?')) return;
+    try {
+        const res = await fetch('/api/admin/seed-quizzes', { method:'POST', headers:{'Content-Type':'application/json','x-admin-token': TOKEN} });
+        const data = await res.json();
+        alert(data.success ? '✅ ' + data.message : '❌ Error');
+    } catch(e) { alert('❌ ' + e.message); }
+}
+

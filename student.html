@@ -367,6 +367,12 @@
         } catch(e) { out.innerHTML = '<span style="color:#ef4444;">เชื่อมต่อไม่ได้</span>'; }
     }
 
+    // PDF Report Card
+    function downloadReportCard() {
+        if (!STUDENT || !STUDENT.id) { alert('กรุณาเข้าสู่ระบบก่อน'); return; }
+        window.open('/api/student/report-pdf/' + STUDENT.id, '_blank');
+    }
+
     function showPortal() {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('portal-screen').style.display = 'block';
